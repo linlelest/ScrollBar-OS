@@ -107,7 +107,7 @@ public class TilingWindow : Window
             Layout = _gridLayout,
             ItemsSource = _selectedWindows
         };
-        _itemsRepeater.ItemTemplate = new WindowTileTemplate(this);
+        _itemsRepeater.ItemTemplate = new WindowTileFactory(this);
 
         var scrollArea = new ScrollViewer
         {
@@ -206,27 +206,28 @@ public class TilingWindow : Window
 }
 
 /// <summary>
-/// Data template for each window tile in the tiling grid.
+/// Element factory for each window tile in the tiling grid.
 /// Shows icon + title with a delete (X) button in the top-right corner.
 /// </summary>
-internal class WindowTileTemplate : Microsoft.UI.Xaml.DataTemplate
+internal class WindowTileFactory : IElementFactory
 {
     private readonly TilingWindow _owner;
 
-    public WindowTileTemplate(TilingWindow owner)
+    public WindowTileFactory(TilingWindow owner)
     {
         _owner = owner;
     }
 
-    protected override UIElement GetElement(object item)
+    public UIElement GetElement(ElementFactoryGetArgs args)
     {
-        var window = (WindowInfo)item;
+        var window = (WindowInfo)args.Data;
 
         var tile = new Grid
         {
             Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
             CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(10)
+            Padding = new Thickness(10),
+            MinHeight = 100
         };
 
         var content = new StackPanel
@@ -299,5 +300,10 @@ internal class WindowTileTemplate : Microsoft.UI.Xaml.DataTemplate
         tile.Children.Add(deleteBtn);
 
         return tile;
+    }
+
+    public void RecycleElement(ElementFactoryRecycleArgs args)
+    {
+        // No recycling needed for this simple factory
     }
 }
