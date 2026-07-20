@@ -16,8 +16,8 @@ public class WindowService
     private DateTime _lastRefresh = DateTime.MinValue;
     private readonly TimeSpan _refreshInterval = TimeSpan.FromMilliseconds(500);
 
-    [DllImport("user32.dll")]
-    private static extern nint GetForegroundWindow();
+    [DllImport("user32.dll", EntryPoint = "GetForegroundWindow")]
+    private static extern nint NativeGetForegroundWindow();
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern nint ExtractIcon(nint hInst, string lpszExeFileName, int nIconIndex);
@@ -96,7 +96,7 @@ public class WindowService
     /// </summary>
     public WindowInfo? GetForegroundWindow()
     {
-        nint hwnd = GetForegroundWindow();
+        nint hwnd = NativeGetForegroundWindow();
         if (hwnd == nint.Zero) return null;
 
         var title = Win32Helper.GetWindowTitle(hwnd);
