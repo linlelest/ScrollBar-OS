@@ -140,7 +140,7 @@ public sealed partial class MainWindow : Window
                 Width = 44,
                 Height = 44,
                 Padding = new Thickness(4),
-                Background = new SolidColorBrush(Microsoft.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
                 CornerRadius = new CornerRadius(8),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Tag = window
@@ -161,7 +161,7 @@ public sealed partial class MainWindow : Window
                 {
                     Glyph = "\uE737", // App icon glyph
                     FontSize = 18,
-                    Foreground = new SolidColorBrush(Microsoft.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF))
+                    Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF))
                 };
             }
 
