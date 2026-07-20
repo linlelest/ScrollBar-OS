@@ -1,6 +1,6 @@
+using ScrollBarOS.Models;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using ScrollBarOS.Models;
 
 namespace ScrollBarOS.Services;
 
@@ -98,16 +98,10 @@ public class HardwareMonitorService
             info.CpuUsage = GetCpuUsage();
 
             // Memory Usage
-            GetMemoryInfo(out float memUsage, out long totalMB, out long usedMB);
-            info.MemoryUsage = memUsage;
-            info.TotalMemoryMB = totalMB;
-            info.UsedMemoryMB = usedMB;
+            info.MemoryUsage = GetMemoryUsage();
 
             // Disk Usage
-            GetDiskInfo(out float diskUsage, out double totalGB, out double freeGB);
-            info.DiskUsage = diskUsage;
-            info.TotalDiskGB = totalGB;
-            info.FreeDiskGB = freeGB;
+            info.DiskUsage = GetDiskUsage();
 
             // Network
             info.NetworkUploadKBps = GetNetworkUpload();
@@ -138,12 +132,8 @@ public class HardwareMonitorService
         }
     }
 
-    private void GetMemoryInfo(out float usagePercent, out long totalMB, out long usedMB)
+    private float GetMemoryUsage()
     {
-        usagePercent = 0;
-        totalMB = 0;
-        usedMB = 0;
-
         try
         {
             var status = new MEMORYSTATUSEX();
@@ -151,38 +141,35 @@ public class HardwareMonitorService
 
             if (GlobalMemoryStatusEx(ref status))
             {
-                totalMB = (long)(status.ullTotalPhys / 1024 / 1024);
-                long availMB = (long)(status.ullAvailPhys / 1024 / 1024);
-                usedMB = totalMB - availMB;
-                usagePercent = (float)usedMB / totalMB * 100;
+                long totalBytes = (long)status.ullTotalPhys;
+                long usedBytes = totalBytes - (long)status.ullAvailPhys;
+                return (float)usedBytes / totalBytes * 100;
             }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"Error getting memory info: {ex.Message}");
         }
+
+        return 0f;
     }
 
-    private void GetDiskInfo(out float usagePercent, out double totalGB, out double freeGB)
+    private float GetDiskUsage()
     {
-        usagePercent = 0;
-        totalGB = 0;
-        freeGB = 0;
-
         try
         {
             var drive = new DriveInfo(Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\");
             if (drive.IsReady)
             {
-                totalGB = drive.TotalSize / (1024.0 * 1024.0 * 1024.0);
-                freeGB = drive.TotalFreeSpace / (1024.0 * 1024.0 * 1024.0);
-                usagePercent = (float)((drive.TotalSize - drive.TotalFreeSpace) / (double)drive.TotalSize * 100);
+                return (float)((drive.TotalSize - drive.TotalFreeSpace) / (double)drive.TotalSize * 100);
             }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"Error getting disk info: {ex.Message}");
         }
+
+        return 0f;
     }
 
     private float GetNetworkUpload()

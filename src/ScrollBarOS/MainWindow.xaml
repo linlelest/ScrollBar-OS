@@ -24,15 +24,6 @@
 
             <!-- Bottom controls -->
             <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button x:Name="TrayExpandButton" Click="TrayExpandButton_Click" Background="Transparent" BorderThickness="0" Padding="4" Margin="2">
-                        <FontIcon Glyph="&#xE76B;" FontSize="12" Foreground="#AAFFFFFF"/>
-                    </Button>
-                    <Button x:Name="MenuButton" Click="MenuButton_Click" Background="Transparent" BorderThickness="0" Padding="4" Margin="2">
-                        <FontIcon Glyph="&#xE712;" FontSize="12" Foreground="#AAFFFFFF"/>
-                    </Button>
-                </StackPanel>
-
                 <TextBlock x:Name="_dateTimeText" FontSize="9" Foreground="#AAFFFFFF" HorizontalAlignment="Center" Margin="0,2,0,2" />
 
                 <StackPanel HorizontalAlignment="Center">
@@ -42,8 +33,6 @@
                     <TextBlock x:Name="_netText" Text="Net: --" FontSize="9" Foreground="#AAFFFFFF" Margin="4,1" />
                 </StackPanel>
 
-                <StackPanel x:Name="_pinnedAppsPanel" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,4" />
-
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button x:Name="TilingButton" Click="TilingButton_Click" Background="Transparent" BorderThickness="0" Padding="4" Margin="2" ToolTipService.ToolTip="Tile Windows">
                         <FontIcon Glyph="&#xE740;" FontSize="12" Foreground="#AAFFFFFF"/>
@@ -52,6 +41,9 @@
                         <FontIcon Glyph="&#xE713;" FontSize="14" Foreground="#CCFFFFFF"/>
                     </Button>
                 </StackPanel>
+                <Button x:Name="CloseButton" Click="CloseButton_Click" Background="Transparent" HorizontalAlignment="Center">
+                    <FontIcon Glyph="&#xE7E8;" FontSize="20" Foreground="#CCFFFFFF"/>
+                </Button>
             </StackPanel>
         </Grid>
     </Border>

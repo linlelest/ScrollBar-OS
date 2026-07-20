@@ -1,13 +1,12 @@
 using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Windowing;
-using Windows.Graphics;
-using ScrollBarOS.Services;
-using ScrollBarOS.Models;
 using ScrollBarOS.Helpers;
+using ScrollBarOS.Models;
+using ScrollBarOS.Services;
 using System.Collections.ObjectModel;
+using Windows.Graphics;
 
 namespace ScrollBarOS;
 
@@ -308,3 +307,4 @@ internal class WindowTileFactory : IElementFactory
         // No recycling needed for this simple factory
     }
 }
+

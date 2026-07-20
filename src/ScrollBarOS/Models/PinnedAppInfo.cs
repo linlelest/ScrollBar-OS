@@ -23,10 +23,4 @@ public class PinnedAppInfo
     public bool IsSystemApp { get; set; }
 
     public PinnedAppInfo() { }
-
-    public PinnedAppInfo(string name, string executablePath)
-    {
-        Name = name;
-        ExecutablePath = executablePath;
-    }
 }

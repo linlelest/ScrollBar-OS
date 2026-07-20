@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using ScrollBarOS.Models;
 
 namespace ScrollBarOS.Services;

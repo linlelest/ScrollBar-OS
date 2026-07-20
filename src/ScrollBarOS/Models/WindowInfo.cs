@@ -36,8 +36,6 @@ public class WindowInfo
 
     /// <summary>Window position and size</summary>
     public WindowRect Position { get; set; }
-
-    public override string ToString() => Title;
 }
 
 /// <summary>

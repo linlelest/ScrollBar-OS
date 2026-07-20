@@ -1,9 +1,9 @@
-using System.Diagnostics;
-using System.Drawing;
-using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml.Media.Imaging;
 using ScrollBarOS.Helpers;
 using ScrollBarOS.Models;
+using System.Diagnostics;
+using System.Drawing;
+using System.Runtime.InteropServices;
 
 namespace ScrollBarOS.Services;
 

@@ -7,9 +7,6 @@ namespace ScrollBarOS.Models;
 /// </summary>
 public class AppConfig
 {
-    /// <summary>Capsule background color (ARGB hex string, e.g. "#CC1E1E2E")</summary>
-    public string BackgroundColor { get; set; } = "#CC1E1E2E";
-
     /// <summary>Capsule background material type</summary>
     public BackgroundMaterial Material { get; set; } = BackgroundMaterial.Acrylic;
 
@@ -25,9 +22,6 @@ public class AppConfig
     /// <summary>Icon size in pixels</summary>
     public int IconSize { get; set; } = 32;
 
-    /// <summary>Font size for text elements</summary>
-    public int FontSize { get; set; } = 10;
-
     /// <summary>Whether to show date/time widget</summary>
     public bool ShowDateTimeWidget { get; set; } = true;
 
@@ -37,9 +31,6 @@ public class AppConfig
     /// <summary>Whether to hide the system taskbar</summary>
     public bool HideTaskbar { get; set; } = false;
 
-    /// <summary>Application language</summary>
-    public AppLanguage Language { get; set; } = AppLanguage.Chinese;
-
     /// <summary>Pinned application paths</summary>
     public List<string> PinnedApps { get; set; } = new();
 
@@ -48,9 +39,6 @@ public class AppConfig
 
     /// <summary>Scroll speed threshold (number of scroll ticks in 200ms to trigger fast mode)</summary>
     public int ScrollThreshold { get; set; } = 3;
-
-    /// <summary>Corner radius of the capsule</summary>
-    public int CornerRadius { get; set; } = 32;
 
     /// <summary>Background opacity (0.0 - 1.0)</summary>
     public double BackgroundOpacity { get; set; } = 0.8;
@@ -63,9 +51,8 @@ public class AppConfig
 public enum BackgroundMaterial
 {
     Solid,
-    Gradient,
-    Mica,
-    Acrylic
+    Acrylic,
+    Mica
 }
 
 /// <summary>
@@ -76,14 +63,4 @@ public enum CapsulePosition
 {
     Left,
     Right
-}
-
-/// <summary>
-/// Application language
-/// </summary>
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum AppLanguage
-{
-    Chinese,
-    English
 }

@@ -38,10 +38,14 @@
 
   <ItemGroup>
     <Page Remove="MainWindow.xaml" />
+    <Page Remove="TilingWindow.xaml" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Update="TilingWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>

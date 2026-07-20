@@ -75,11 +75,17 @@ public class TrayService
 
     private PinnedAppInfo CreatePinnedAppInfo(string path)
     {
+        var name = Path.GetFileNameWithoutExtension(path);
+        var isSystemApp = path.IndexOf("System32", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                          string.Equals(name, "explorer", StringComparison.OrdinalIgnoreCase);
+
         return new PinnedAppInfo
         {
-            Name = Path.GetFileNameWithoutExtension(path),
+            Name = name,
             ExecutablePath = path,
-            Icon = _windowService.GetIconForPath(path)
+            Icon = _windowService.GetIconForPath(path),
+            Arguments = string.Empty,
+            IsSystemApp = isSystemApp
         };
     }
 
@@ -88,6 +94,15 @@ public class TrayService
     /// </summary>
     public void LaunchPinnedApp(PinnedAppInfo app)
     {
+        if (app == null)
+            return;
+
+        if (app.IsSystemApp && !File.Exists(app.ExecutablePath))
+        {
+            App.WriteLog($"Skipping launch for system app '{app.Name}' because the executable was not found.");
+            return;
+        }
+
         _windowService.LaunchApp(app.ExecutablePath, app.Arguments);
     }
 

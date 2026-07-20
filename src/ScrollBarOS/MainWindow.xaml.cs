@@ -1,14 +1,14 @@
 using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Windowing;
-using System.Runtime.InteropServices;
-using Windows.Graphics;
-using ScrollBarOS.Services;
 using ScrollBarOS.Helpers;
 using ScrollBarOS.Models;
+using ScrollBarOS.Services;
+using System.Runtime.InteropServices;
+using Windows.Graphics;
 
 namespace ScrollBarOS;
 
@@ -26,7 +26,6 @@ public sealed partial class MainWindow : Window
     private nint _hwnd;
     private NotifyIconHelper? _notifyIcon;
     private DispatcherTimer? _refreshTimer;
-    private SidePanelWindow? _sidePanel;
     private TilingWindow? _tilingWindow;
 
     // Non-visual state
@@ -39,23 +38,6 @@ public sealed partial class MainWindow : Window
     {
         // Initialize XAML-defined UI
         InitializeComponent();
-
-        // Ensure pinned app slots exist (3 slots)
-        for (int i = 0; i < 3; i++)
-        {
-            var pinBtn = new Button
-            {
-                Width = 20,
-                Height = 20,
-                Padding = new Thickness(0),
-                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                BorderThickness = new Thickness(0),
-                Margin = new Thickness(2, 0, 2, 0),
-                Tag = i
-            };
-            pinBtn.Click += PinnedApp_Click;
-            _pinnedAppsPanel.Children.Add(pinBtn);
-        }
 
         // Initialize services
         _configService = ConfigService.Instance;
@@ -90,9 +72,6 @@ public sealed partial class MainWindow : Window
         // Populate window list
         RefreshWindowList();
 
-        // Refresh pinned apps UI
-        RefreshPinnedApps();
-
         // Refresh timer
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _refreshTimer.Tick += (s, e) => RefreshWindowList();
@@ -104,7 +83,6 @@ public sealed partial class MainWindow : Window
         _dateTimeTimer.Start();
         _dateTimeText.Text = DateTime.Now.ToString("HH:mm\nMM/dd");
 
-        Closed += MainWindow_Closed;
         App.WriteLog("MainWindow constructor completed successfully");
     }
 
@@ -114,7 +92,6 @@ public sealed partial class MainWindow : Window
     {
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
 
-        Title = "ScrollBar OS";
         ExtendsContentIntoTitleBar = true;
 
         // Remove window border/titlebar - make it a pure capsule shape
@@ -258,7 +235,6 @@ public sealed partial class MainWindow : Window
 
         flyout.Items.Add(minimizeItem);
         flyout.Items.Add(closeItem);
-        AddPinOption(flyout, window);
         return flyout;
     }
 
@@ -310,8 +286,8 @@ public sealed partial class MainWindow : Window
         _notifyIcon.Create();
 
         // Register global hotkeys on the message window
-        _notifyIcon.RegisterHotKey(HotkeyService.MOD_WIN, 0x54); // Win+T = toggle taskbar
-        _notifyIcon.RegisterHotKey(HotkeyService.MOD_CONTROL, 0x5A); // Ctrl+Z = undo tiling
+        _notifyIcon.RegisterHotKey(0x0008, 0x54); // Win+T = toggle taskbar (MOD_WIN = 0x0008)
+        _notifyIcon.RegisterHotKey(0x0002, 0x5A); // Ctrl+Z = undo tiling (MOD_CONTROL = 0x0002)
     }
 
     private void ScrollStateMachine_ModeChanged(object? sender, ScrollModeChangedEventArgs e)
@@ -438,117 +414,13 @@ public sealed partial class MainWindow : Window
         _tilingWindow.Activate();
     }
 
-    private void TrayExpandButton_Click(object sender, RoutedEventArgs e)
-    {
-        ToggleSidePanel(SidePanelWindow.PanelMode.TrayIcons);
-    }
-
-    private void MenuButton_Click(object sender, RoutedEventArgs e)
-    {
-        ToggleSidePanel(SidePanelWindow.PanelMode.SystemMenu);
-    }
-
-    private void ToggleSidePanel(SidePanelWindow.PanelMode mode)
-    {
-        if (_sidePanel != null)
-        {
-            _sidePanel.Close();
-            _sidePanel = null;
-            return;
-        }
-
-        // Get the capsule window's position to anchor the panel
-        var appWindow = AppWindow.GetFromWindowId(Win32Interop.GetWindowIdFromWindow(_hwnd));
-        var bounds = appWindow.Position;
-        var size = appWindow.Size;
-        var anchorRect = new RectInt32(bounds.X, bounds.Y, size.Width, size.Height);
-
-        _sidePanel = new SidePanelWindow(mode, _windowService, _trayService, anchorRect);
-        _sidePanel.Closed += (s, args) => _sidePanel = null;
-        _sidePanel.Activate();
-    }
-
-    private void PinnedApp_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.Tag is int index)
-        {
-            var pinnedApps = _trayService.PinnedApps;
-            if (index < pinnedApps.Count)
-            {
-                _trayService.LaunchPinnedApp(pinnedApps[index]);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Adds a "Pin to quick launch" option to an app icon's context menu
-    /// </summary>
-    private void AddPinOption(MenuFlyout flyout, WindowInfo window)
-    {
-        var pinItem = new MenuFlyoutItem { Text = "Pin to Quick Launch", Tag = window };
-        pinItem.Click += (s, e) =>
-        {
-            if (s is MenuFlyoutItem item && item.Tag is WindowInfo wi && !string.IsNullOrEmpty(wi.ExecutablePath))
-            {
-                _trayService.PinApp(wi.ExecutablePath);
-                RefreshPinnedApps();
-            }
-        };
-        flyout.Items.Add(pinItem);
-    }
-
-    /// <summary>
-    /// Refreshes the pinned apps panel UI
-    /// </summary>
-    private void RefreshPinnedApps()
-    {
-        var pinnedApps = _trayService.PinnedApps;
-        for (int i = 0; i < _pinnedAppsPanel.Children.Count; i++)
-        {
-            if (_pinnedAppsPanel.Children[i] is not Button btn) continue;
-
-            if (i < pinnedApps.Count)
-            {
-                btn.Content = CreatePinnedAppContent(pinnedApps[i]);
-                ToolTipService.SetToolTip(btn, pinnedApps[i].Name);
-            }
-            else
-            {
-                btn.Content = CreateEmptyPinnedAppContent();
-                ToolTipService.SetToolTip(btn, "Empty slot");
-            }
-        }
-    }
-
-    private object CreatePinnedAppContent(PinnedAppInfo app)
-    {
-        return app.Icon != null
-            ? new Image { Source = app.Icon, Width = 16, Height = 16 }
-            : new FontIcon
-            {
-                Glyph = "\uE718",
-                FontSize = 10,
-                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
-            };
-    }
-
-    private object CreateEmptyPinnedAppContent()
-    {
-        return new FontIcon
-        {
-            Glyph = "\uE718",
-            FontSize = 10,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x44, 0xFF, 0xFF, 0xFF))
-        };
-    }
-
     private void OpenSettings()
     {
         var settingsWindow = new SettingsWindow();
         settingsWindow.Activate();
     }
 
-    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    private void MainWindow_Closed()
     {
         _refreshTimer?.Stop();
         _dateTimeTimer?.Stop();
@@ -566,6 +438,12 @@ public sealed partial class MainWindow : Window
     public TilingService TilingServiceInstance => _tilingService;
     public HardwareMonitorService HardwareMonitorInstance => _hardwareMonitor;
     public TrayService TrayServiceInstance => _trayService;
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        MainWindow_Closed();
+        Close();
+    }
 }
 
 /// <summary>

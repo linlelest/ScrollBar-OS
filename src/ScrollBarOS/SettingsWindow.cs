@@ -1,10 +1,10 @@
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Windowing;
-using Windows.Graphics;
-using ScrollBarOS.Services;
-using ScrollBarOS.Models;
 using Microsoft.Win32;
+using ScrollBarOS.Models;
+using ScrollBarOS.Services;
+using Windows.Graphics;
 
 namespace ScrollBarOS;
 
@@ -113,16 +113,6 @@ public class SettingsWindow : Window
         };
         panel.Children.Add(startupToggle);
 
-        panel.Children.Add(CreateSectionTitle("Language"));
-        var langCombo = CreateComboBox("简体中文", "English");
-        langCombo.SelectedIndex = config.Language == AppLanguage.Chinese ? 0 : 1;
-        langCombo.SelectionChanged += (s, e) =>
-        {
-            var lang = langCombo.SelectedIndex == 0 ? AppLanguage.Chinese : AppLanguage.English;
-            _configService.Update(c => c.Language = lang);
-        };
-        panel.Children.Add(langCombo);
-
         panel.Children.Add(new TextBlock
         {
             Text = "ScrollBar OS v1.0.0",
@@ -183,3 +173,4 @@ public class SettingsWindow : Window
         catch { }
     }
 }
+
