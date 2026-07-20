@@ -104,7 +104,7 @@ public sealed class MainWindow : Window
         var settingsButton = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Center,
-            Background = new SolidColorBrush(Windows.UI.Colors.Transparent),
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
             BorderThickness = new Thickness(0),
             Padding = new Thickness(4),
             Margin = new Thickness(0, 4, 0, 0),
