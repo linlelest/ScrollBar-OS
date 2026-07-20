@@ -19,7 +19,9 @@
     <Version>1.0.0</Version>
     <Authors>ScrollBar-OS Team</Authors>
     <Description>A lightweight Windows desktop enhancement tool with capsule-style UI</Description>
-    <NoWarn>$(NoWarn);CS8305</NoWarn>
+    <NoWarn>$(NoWarn);CS8305;CS0067;CS0169</NoWarn>
+    <GeneratePriFile>false</GeneratePriFile>
+    <EnableMsixTooling>false</EnableMsixTooling>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,8 +36,5 @@
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PRIResource Include="Strings\zh-CN\Resources.resw" />
-    <PRIResource Include="Strings\en-US\Resources.resw" />
-  </ItemGroup>
+
 </Project>
