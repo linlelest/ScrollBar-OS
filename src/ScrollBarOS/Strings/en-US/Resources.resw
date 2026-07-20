@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="AppName">
+    <value>ScrollBar OS</value>
+  </data>
+  <data name="Settings">
+    <value>Settings</value>
+  </data>
+  <data name="CapsuleBackground">
+    <value>Capsule Background</value>
+  </data>
+  <data name="Material">
+    <value>Material</value>
+  </data>
+  <data name="Opacity">
+    <value>Opacity</value>
+  </data>
+  <data name="CapsulePosition">
+    <value>Capsule Position</value>
+  </data>
+  <data name="Left">
+    <value>Left</value>
+  </data>
+  <data name="Right">
+    <value>Right</value>
+  </data>
+  <data name="Widgets">
+    <value>Widgets</value>
+  </data>
+  <data name="DateTime">
+    <value>Date &amp; Time</value>
+  </data>
+  <data name="HardwareMonitor">
+    <value>Hardware Monitor</value>
+  </data>
+  <data name="System">
+    <value>System</value>
+  </data>
+  <data name="HideTaskbar">
+    <value>Hide Taskbar</value>
+  </data>
+  <data name="StartWithWindows">
+    <value>Start with Windows</value>
+  </data>
+  <data name="Language">
+    <value>Language</value>
+  </data>
+  <data name="Size">
+    <value>Size</value>
+  </data>
+  <data name="CapsuleWidth">
+    <value>Capsule Width</value>
+  </data>
+  <data name="IconSize">
+    <value>Icon Size</value>
+  </data>
+  <data name="ApplyTiling">
+    <value>Apply Tiling</value>
+  </data>
+  <data name="Cancel">
+    <value>Cancel</value>
+  </data>
+  <data name="WindowTiling">
+    <value>Window Tiling</value>
+  </data>
+  <data name="MinimizedApps">
+    <value>Minimized Apps</value>
+  </data>
+  <data name="PinnedApps">
+    <value>Pinned Apps</value>
+  </data>
+  <data name="PinToQuickLaunch">
+    <value>Pin to Quick Launch</value>
+  </data>
+  <data name="Unpin">
+    <value>Unpin</value>
+  </data>
+  <data name="HideMenu">
+    <value>Hide Menu</value>
+  </data>
+  <data name="Windows">
+    <value>Windows</value>
+  </data>
+  <data name="SystemMonitor">
+    <value>System Monitor</value>
+  </data>
+</root>

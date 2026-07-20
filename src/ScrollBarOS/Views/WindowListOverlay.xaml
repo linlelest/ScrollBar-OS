@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="ScrollBarOS.Views.WindowListOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="OverlayRoot"
+          Background="#66000000"
+          Visibility="Collapsed">
+        
+        <!-- Glass panel -->
+        <Border Background="#BB1E1E2E"
+                CornerRadius="12"
+                Padding="16"
+                Width="280"
+                MaxHeight="400"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <TextBlock Grid.Row="0"
+                           Text="Windows"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="#FFFFFF"
+                           Margin="0,0,0,12"/>
+
+                <!-- Window List -->
+                <ListView x:Name="WindowListView"
+                          Grid.Row="1"
+                          SelectionMode="Single"
+                          IsItemClickEnabled="True"
+                          ItemClick="WindowListView_ItemClick"
+                          Background="Transparent">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="8,6" ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <Image Grid.Column="0"
+                                       Source="{Binding Icon}"
+                                       Width="20" Height="20"/>
+                                
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Title}"
+                                           FontSize="12"
+                                           Foreground="#EEFFFFFF"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="MinHeight" Value="36"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

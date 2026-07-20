@@ -1,0 +1,42 @@
+// Win32 API declarations for CsWin32 source generator
+// Window Management
+EnumWindows
+GetWindowText
+GetWindowTextLength
+IsWindowVisible
+IsIconic
+IsZoomed
+GetWindowRect
+SetWindowPos
+ShowWindow
+SetForegroundWindow
+BringWindowToTop
+GetForegroundWindow
+FindWindow
+GetWindowThreadProcessId
+AttachThreadInput
+GetWindowLong
+SetWindowLong
+SetLayeredWindowAttributes
+SendMessage
+SystemParametersInfo
+GetMonitorInfo
+MonitorFromPoint
+GetCursorPos
+GetDpiForWindow
+
+// Hotkeys
+RegisterHotKey
+UnregisterHotKey
+
+// Process
+GetCurrentThreadId
+
+// Shell
+Shell_NotifyIcon
+SHAppBarMessage
+
+// Icons
+ExtractIcon
+DestroyIcon
+GetClassLong

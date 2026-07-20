@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="ScrollBarOS.Views.TrayMenu"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="TrayMenuRoot" Visibility="Collapsed">
+        <!-- Backdrop -->
+        <Rectangle Fill="#22000000" Tapped="Backdrop_Tapped"/>
+
+        <!-- Menu Panel -->
+        <Border x:Name="MenuBorder"
+                Background="#F21E1E2E"
+                CornerRadius="10"
+                Width="180"
+                Padding="12"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Margin="0,0,80,60">
+            <StackPanel Spacing="8">
+                <!-- Tray Icons Section -->
+                <TextBlock Text="Minimized Apps" FontSize="11" FontWeight="SemiBold" Foreground="#AAFFFFFF"/>
+                <ItemsRepeater x:Name="TrayItemsRepeater" MaxHeight="120">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Orientation="Vertical" Spacing="4"/>
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate>
+                            <Button HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Left"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="6,4"
+                                    Click="TrayItem_Click"
+                                    DataContext="{Binding}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Image Source="{Binding Icon}" Width="16" Height="16"/>
+                                    <TextBlock Text="{Binding Title}" FontSize="11" Foreground="#DDFFFFFF"
+                                               TextTrimming="CharacterEllipsis" MaxWidth="120"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+
+                <Rectangle Height="1" Fill="#33FFFFFF" Margin="0,4"/>
+
+                <!-- Pinned Apps Section -->
+                <TextBlock Text="Pinned Apps" FontSize="11" FontWeight="SemiBold" Foreground="#AAFFFFFF"/>
+                <ItemsRepeater x:Name="PinnedItemsRepeater" MaxHeight="120">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Orientation="Vertical" Spacing="4"/>
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate>
+                            <Button HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Left"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="6,4"
+                                    Click="PinnedItem_Click"
+                                    RightTapped="PinnedItem_RightTapped"
+                                    DataContext="{Binding}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Image Source="{Binding Icon}" Width="16" Height="16"/>
+                                    <TextBlock Text="{Binding Name}" FontSize="11" Foreground="#DDFFFFFF"
+                                               TextTrimming="CharacterEllipsis" MaxWidth="120"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+
+                <Rectangle Height="1" Fill="#33FFFFFF" Margin="0,4"/>
+
+                <!-- Actions -->
+                <Button x:Name="HideButton"
+                        Content="Hide Menu"
+                        HorizontalAlignment="Stretch"
+                        Background="#33FFFFFF"
+                        Foreground="#DDFFFFFF"
+                        FontSize="11"
+                        Padding="8,6"
+                        Click="HideButton_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

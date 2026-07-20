@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="AppName">
+    <value>ScrollBar OS</value>
+  </data>
+  <data name="Settings">
+    <value>设置</value>
+  </data>
+  <data name="CapsuleBackground">
+    <value>胶囊背景</value>
+  </data>
+  <data name="Material">
+    <value>材质</value>
+  </data>
+  <data name="Opacity">
+    <value>透明度</value>
+  </data>
+  <data name="CapsulePosition">
+    <value>胶囊位置</value>
+  </data>
+  <data name="Left">
+    <value>左侧</value>
+  </data>
+  <data name="Right">
+    <value>右侧</value>
+  </data>
+  <data name="Widgets">
+    <value>小组件</value>
+  </data>
+  <data name="DateTime">
+    <value>日期时间</value>
+  </data>
+  <data name="HardwareMonitor">
+    <value>硬件监控</value>
+  </data>
+  <data name="System">
+    <value>系统</value>
+  </data>
+  <data name="HideTaskbar">
+    <value>隐藏任务栏</value>
+  </data>
+  <data name="StartWithWindows">
+    <value>开机启动</value>
+  </data>
+  <data name="Language">
+    <value>语言</value>
+  </data>
+  <data name="Size">
+    <value>大小</value>
+  </data>
+  <data name="CapsuleWidth">
+    <value>胶囊宽度</value>
+  </data>
+  <data name="IconSize">
+    <value>图标大小</value>
+  </data>
+  <data name="ApplyTiling">
+    <value>应用平铺</value>
+  </data>
+  <data name="Cancel">
+    <value>取消</value>
+  </data>
+  <data name="WindowTiling">
+    <value>窗口平铺</value>
+  </data>
+  <data name="MinimizedApps">
+    <value>最小化应用</value>
+  </data>
+  <data name="PinnedApps">
+    <value>固定应用</value>
+  </data>
+  <data name="PinToQuickLaunch">
+    <value>固定到快速启动</value>
+  </data>
+  <data name="Unpin">
+    <value>取消固定</value>
+  </data>
+  <data name="HideMenu">
+    <value>隐藏菜单</value>
+  </data>
+  <data name="Windows">
+    <value>窗口</value>
+  </data>
+  <data name="SystemMonitor">
+    <value>系统监控</value>
+  </data>
+</root>
