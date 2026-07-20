@@ -12,7 +12,7 @@ using ScrollBarOS.Models;
 
 namespace ScrollBarOS;
 
-public sealed class MainWindow : Window
+public sealed partial class MainWindow : Window
 {
     private readonly ConfigService _configService;
     private readonly WindowService _windowService;
@@ -29,26 +29,33 @@ public sealed class MainWindow : Window
     private SidePanelWindow? _sidePanel;
     private TilingWindow? _tilingWindow;
 
-    // UI elements (built in code, no XAML)
-    private Grid _rootGrid = null!;
-    private StackPanel _appIconsPanel = null!;
-    private TextBlock _cpuText = null!;
-    private TextBlock _memText = null!;
-    private TextBlock _diskText = null!;
-    private TextBlock _netText = null!;
-    private TextBlock _dateTimeText = null!;
-    private StackPanel _pinnedAppsPanel = null!;
-    private Border _rootBorder = null!;
+    // Non-visual state
     private DispatcherTimer? _dateTimeTimer;
     private bool _isListMode = false;
-    private StackPanel _windowListPanel = null!;
     private int _listSelectedIndex = 0;
     private List<WindowInfo> _currentWindows = new();
 
     public MainWindow()
     {
-        // Build UI in code (no XAML file)
-        BuildUI();
+        // Initialize XAML-defined UI
+        InitializeComponent();
+
+        // Ensure pinned app slots exist (3 slots)
+        for (int i = 0; i < 3; i++)
+        {
+            var pinBtn = new Button
+            {
+                Width = 20,
+                Height = 20,
+                Padding = new Thickness(0),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                BorderThickness = new Thickness(0),
+                Margin = new Thickness(2, 0, 2, 0),
+                Tag = i
+            };
+            pinBtn.Click += PinnedApp_Click;
+            _pinnedAppsPanel.Children.Add(pinBtn);
+        }
 
         // Initialize services
         _configService = ConfigService.Instance;
@@ -98,121 +105,10 @@ public sealed class MainWindow : Window
         _dateTimeText.Text = DateTime.Now.ToString("HH:mm\nMM/dd");
 
         Closed += MainWindow_Closed;
-
         App.WriteLog("MainWindow constructor completed successfully");
     }
 
-    /// <summary>
-    /// Builds the entire UI in code - no XAML file needed
-    /// </summary>
-    private void BuildUI()
-    {
-        // Hardware info texts
-        _cpuText = new TextBlock { Text = "CPU: --", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1) };
-        _memText = new TextBlock { Text = "RAM: --", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1) };
-        _diskText = new TextBlock { Text = "Disk: --", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1) };
-        _netText = new TextBlock { Text = "Net: --", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1) };
-
-        // Date/Time widget
-        _dateTimeText = new TextBlock { Text = "", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
-
-        // 3 Pinned quick-launch apps
-        _pinnedAppsPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 4) };
-        for (int i = 0; i < 3; i++)
-        {
-            var pinBtn = new Button
-            {
-                Width = 20, Height = 20, Padding = new Thickness(0),
-                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                BorderThickness = new Thickness(0), Margin = new Thickness(2, 0, 2, 0),
-                Content = new FontIcon { Glyph = "\uE718", FontSize = 10, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF)) },
-                Tag = i
-            };
-            pinBtn.Click += PinnedApp_Click;
-            _pinnedAppsPanel.Children.Add(pinBtn);
-        }
-
-        // Tray expand button (left arrow, above CPU) - opens tray icons panel
-        var trayExpandButton = new Button
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0), Padding = new Thickness(4), Margin = new Thickness(0, 2, 0, 2),
-            Content = new FontIcon { Glyph = "\uE76B", FontSize = 12, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)) }
-        };
-        ToolTipService.SetToolTip(trayExpandButton, "System Tray");
-        trayExpandButton.Click += TrayExpandButton_Click;
-
-        // Three-dot menu button - opens system quick-settings panel
-        var menuButton = new Button
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0), Padding = new Thickness(4), Margin = new Thickness(0, 2, 0, 2),
-            Content = new FontIcon { Glyph = "\uE712", FontSize = 12, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)) }
-        };
-        ToolTipService.SetToolTip(menuButton, "Quick Settings");
-        menuButton.Click += MenuButton_Click;
-
-        // Settings button
-        var settingsButton = new Button
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0), Padding = new Thickness(4), Margin = new Thickness(0, 2, 0, 0),
-            Content = new FontIcon { Glyph = "\uE713", FontSize = 14, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF)) }
-        };
-        settingsButton.Click += SettingsButton_Click;
-
-        // Tiling button - opens the tiling configuration window
-        var tilingButton = new Button
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0), Padding = new Thickness(4), Margin = new Thickness(0, 2, 0, 0),
-            Content = new FontIcon { Glyph = "\uE740", FontSize = 12, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)) }
-        };
-        ToolTipService.SetToolTip(tilingButton, "Tile Windows");
-        tilingButton.Click += TilingButton_Click;
-
-        // Bottom panel: trayExpand + menu + dateTime + hardware + pinned apps + tiling + settings
-        var bottomPanel = new StackPanel
-        {
-            VerticalAlignment = VerticalAlignment.Bottom,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Children = { trayExpandButton, menuButton, _dateTimeText, _cpuText, _memText, _diskText, _netText, _pinnedAppsPanel, tilingButton, settingsButton }
-        };
-
-        // App icons area
-        _appIconsPanel = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 12, 0, 8) };
-
-        // Window list panel (for fast scroll mode, hidden by default)
-        _windowListPanel = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(4, 12, 4, 8), Visibility = Visibility.Collapsed };
-
-        var scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Hidden };
-        var scrollContent = new Grid();
-        scrollContent.Children.Add(_appIconsPanel);
-        scrollContent.Children.Add(_windowListPanel);
-        scrollViewer.Content = scrollContent;
-
-        _rootGrid = new Grid();
-        _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(7, GridUnitType.Star) });
-        _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(3, GridUnitType.Star) });
-        _rootGrid.Children.Add(scrollViewer);
-        _rootGrid.Children.Add(bottomPanel);
-        Grid.SetRow(scrollViewer, 0);
-        Grid.SetRow(bottomPanel, 1);
-
-        _rootBorder = new Border
-        {
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0x1E, 0x1E, 0x2E)),
-            CornerRadius = new CornerRadius(20),
-            Padding = new Thickness(8),
-            Child = _rootGrid
-        };
-
-        Content = _rootBorder;
-    }
+    // BuildUI removed: UI is defined in XAML (MainWindow.xaml). Dynamic parts (pinned apps) are created at runtime.
 
     private void SetupWindow()
     {
@@ -284,83 +180,97 @@ public sealed class MainWindow : Window
 
         foreach (var window in _currentWindows)
         {
-            var button = new Button
-            {
-                Width = 44, Height = 44, Padding = new Thickness(4),
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
-                CornerRadius = new CornerRadius(8),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Tag = window,
-                RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
-                RenderTransform = new ScaleTransform { ScaleX = 1.0, ScaleY = 1.0 }
-            };
-
-            if (window.Icon != null)
-            {
-                button.Content = new Image { Source = window.Icon, Width = 32, Height = 32 };
-            }
-            else
-            {
-                button.Content = new FontIcon { Glyph = "\uE737", FontSize = 18, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)) };
-            }
-
-            // Click: toggle focus/minimize
-            button.Click += (s, e) =>
-            {
-                if (s is Button btn && btn.Tag is WindowInfo wi)
-                {
-                    var foreground = _windowService.GetForegroundWindow();
-                    if (foreground != null && foreground.Handle == wi.Handle)
-                    {
-                        // Already focused -> minimize
-                        Win32Helper.MinimizeWindow(wi.Handle);
-                    }
-                    else
-                    {
-                        _windowService.FocusWindow(wi);
-                    }
-                }
-            };
-
-            // Right-click: context menu with Close option
-            var flyout = new MenuFlyout();
-            var closeItem = new MenuFlyoutItem { Text = "Close", Tag = window };
-            closeItem.Click += (s, e) =>
-            {
-                if (s is MenuFlyoutItem item && item.Tag is WindowInfo wi)
-                {
-                    Win32Helper.CloseWindow(wi.Handle);
-                }
-            };
-            var minimizeItem = new MenuFlyoutItem { Text = "Minimize", Tag = window };
-            minimizeItem.Click += (s, e) =>
-            {
-                if (s is MenuFlyoutItem item && item.Tag is WindowInfo wi)
-                {
-                    Win32Helper.MinimizeWindow(wi.Handle);
-                }
-            };
-            flyout.Items.Add(minimizeItem);
-            flyout.Items.Add(closeItem);
-            AddPinOption(flyout, window);
-            button.ContextFlyout = flyout;
-
-            // Hover animation: scale up
-            button.PointerEntered += (s, e) =>
-            {
-                if (s is Button btn && btn.RenderTransform is ScaleTransform st)
-                { st.ScaleX = 1.15; st.ScaleY = 1.15; }
-            };
-            button.PointerExited += (s, e) =>
-            {
-                if (s is Button btn && btn.RenderTransform is ScaleTransform st)
-                { st.ScaleX = 1.0; st.ScaleY = 1.0; }
-            };
-
-            ToolTipService.SetToolTip(button, window.Title);
-            _appIconsPanel.Children.Add(button);
+            _appIconsPanel.Children.Add(CreateWindowButton(window));
         }
     }
+
+    private Button CreateWindowButton(WindowInfo window)
+    {
+        var button = new Button
+        {
+            Width = 44,
+            Height = 44,
+            Padding = new Thickness(4),
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
+            CornerRadius = new CornerRadius(8),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Tag = window,
+            RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
+            RenderTransform = new ScaleTransform { ScaleX = 1.0, ScaleY = 1.0 }
+        };
+
+        button.Content = CreateWindowButtonContent(window);
+        button.Click += WindowButton_Click;
+        button.ContextFlyout = CreateWindowFlyout(window);
+        button.PointerEntered += (_, _) => SetButtonScale(button, 1.15);
+        button.PointerExited += (_, _) => SetButtonScale(button, 1.0);
+        ToolTipService.SetToolTip(button, window.Title);
+        return button;
+    }
+
+    private void WindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not WindowInfo wi) return;
+
+        var foreground = _windowService.GetForegroundWindow();
+        if (foreground is { Handle: var handle } && handle == wi.Handle)
+        {
+            Win32Helper.MinimizeWindow(wi.Handle);
+        }
+        else
+        {
+            _windowService.FocusWindow(wi);
+        }
+    }
+
+    private UIElement CreateWindowButtonContent(WindowInfo window)
+    {
+        return window.Icon != null
+            ? new Image { Source = window.Icon, Width = 32, Height = 32 }
+            : new FontIcon
+            {
+                Glyph = "\uE737",
+                FontSize = 18,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF))
+            };
+    }
+
+    private MenuFlyout CreateWindowFlyout(WindowInfo window)
+    {
+        var flyout = new MenuFlyout();
+        var closeItem = new MenuFlyoutItem { Text = "Close", Tag = window };
+        closeItem.Click += (_, _) =>
+        {
+            if (closeItem.Tag is WindowInfo wi)
+            {
+                Win32Helper.CloseWindow(wi.Handle);
+            }
+        };
+
+        var minimizeItem = new MenuFlyoutItem { Text = "Minimize", Tag = window };
+        minimizeItem.Click += (_, _) =>
+        {
+            if (minimizeItem.Tag is WindowInfo wi)
+            {
+                Win32Helper.MinimizeWindow(wi.Handle);
+            }
+        };
+
+        flyout.Items.Add(minimizeItem);
+        flyout.Items.Add(closeItem);
+        AddPinOption(flyout, window);
+        return flyout;
+    }
+
+    private static void SetButtonScale(Button button, double scale)
+    {
+        if (button.RenderTransform is ScaleTransform transform)
+        {
+            transform.ScaleX = scale;
+            transform.ScaleY = scale;
+        }
+    }
+
 
     private void HardwareMonitor_InfoUpdated(object? sender, HardwareInfo info)
     {
@@ -595,24 +505,41 @@ public sealed class MainWindow : Window
         var pinnedApps = _trayService.PinnedApps;
         for (int i = 0; i < _pinnedAppsPanel.Children.Count; i++)
         {
-            if (_pinnedAppsPanel.Children[i] is Button btn)
+            if (_pinnedAppsPanel.Children[i] is not Button btn) continue;
+
+            if (i < pinnedApps.Count)
             {
-                if (i < pinnedApps.Count)
-                {
-                    // Show the pinned app icon
-                    var icon = pinnedApps[i].Icon;
-                    btn.Content = icon != null
-                        ? (object)new Image { Source = icon, Width = 16, Height = 16 }
-                        : new FontIcon { Glyph = "\uE718", FontSize = 10, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF)) };
-                    ToolTipService.SetToolTip(btn, pinnedApps[i].Name);
-                }
-                else
-                {
-                    btn.Content = new FontIcon { Glyph = "\uE718", FontSize = 10, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x44, 0xFF, 0xFF, 0xFF)) };
-                    ToolTipService.SetToolTip(btn, "Empty slot");
-                }
+                btn.Content = CreatePinnedAppContent(pinnedApps[i]);
+                ToolTipService.SetToolTip(btn, pinnedApps[i].Name);
+            }
+            else
+            {
+                btn.Content = CreateEmptyPinnedAppContent();
+                ToolTipService.SetToolTip(btn, "Empty slot");
             }
         }
+    }
+
+    private object CreatePinnedAppContent(PinnedAppInfo app)
+    {
+        return app.Icon != null
+            ? new Image { Source = app.Icon, Width = 16, Height = 16 }
+            : new FontIcon
+            {
+                Glyph = "\uE718",
+                FontSize = 10,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF))
+            };
+    }
+
+    private object CreateEmptyPinnedAppContent()
+    {
+        return new FontIcon
+        {
+            Glyph = "\uE718",
+            FontSize = 10,
+            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x44, 0xFF, 0xFF, 0xFF))
+        };
     }
 
     private void OpenSettings()

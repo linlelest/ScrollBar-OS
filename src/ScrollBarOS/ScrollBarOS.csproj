@@ -36,7 +36,20 @@
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Page Remove="MainWindow.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+  </ItemGroup>
+
   <!-- SidePanelWindow.xaml is included implicitly by the SDK's default Page items -->
+  <ItemGroup>
+    <Page Include="MainWindow.xaml" />
+  </ItemGroup>
 
 
 </Project>

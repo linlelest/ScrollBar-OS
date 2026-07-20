@@ -142,17 +142,7 @@ public class WindowService
                 iconHandle = ExtractIcon(nint.Zero, exePath, 0);
             }
 
-            if (iconHandle == nint.Zero) return null;
-
-            using var icon = Icon.FromHandle(iconHandle);
-            using var bitmap = icon.ToBitmap();
-            using var memoryStream = new MemoryStream();
-            bitmap.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
-            memoryStream.Position = 0;
-
-            var bitmapImage = new BitmapImage();
-            bitmapImage.SetSource(memoryStream.AsRandomAccessStream());
-            return bitmapImage;
+            return iconHandle == nint.Zero ? null : CreateBitmapImageFromIcon(iconHandle);
         }
         catch
         {
@@ -168,8 +158,18 @@ public class WindowService
         try
         {
             nint iconHandle = ExtractIcon(nint.Zero, exePath, 0);
-            if (iconHandle == nint.Zero) return null;
+            return iconHandle == nint.Zero ? null : CreateBitmapImageFromIcon(iconHandle, destroyHandle: true);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
+    private static BitmapImage? CreateBitmapImageFromIcon(nint iconHandle, bool destroyHandle = false)
+    {
+        try
+        {
             using var icon = Icon.FromHandle(iconHandle);
             using var bitmap = icon.ToBitmap();
             using var memoryStream = new MemoryStream();
@@ -179,7 +179,11 @@ public class WindowService
             var bitmapImage = new BitmapImage();
             bitmapImage.SetSource(memoryStream.AsRandomAccessStream());
 
-            DestroyIcon(iconHandle);
+            if (destroyHandle)
+            {
+                DestroyIcon(iconHandle);
+            }
+
             return bitmapImage;
         }
         catch

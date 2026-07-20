@@ -41,38 +41,30 @@ public class ScrollStateMachine
         // Remove entries older than 200ms
         _scrollHistory.RemoveAll(entry => (now - entry.timestamp).TotalMilliseconds > 200);
 
-        // Calculate scroll velocity (number of scroll ticks in 200ms window)
         int totalTicks = _scrollHistory.Count;
         int threshold = _configService.Config.ScrollThreshold;
 
         if (totalTicks > threshold)
         {
-            // Fast scroll - enter list mode
             if (_currentMode != ScrollMode.FastScroll)
             {
                 SetMode(ScrollMode.FastScroll);
             }
             HandleFastScroll(delta);
         }
+        else if (_currentMode == ScrollMode.FastScroll)
+        {
+            ResetListExitTimer();
+        }
         else
         {
-            // Slow scroll - switch windows directly
-            if (_currentMode == ScrollMode.FastScroll)
+            if (_currentMode != ScrollMode.SlowScroll)
             {
-                // Reset the list exit timer
-                ResetListExitTimer();
+                SetMode(ScrollMode.SlowScroll);
             }
-            else
-            {
-                if (_currentMode != ScrollMode.SlowScroll)
-                {
-                    SetMode(ScrollMode.SlowScroll);
-                }
-                HandleSlowScroll(delta);
-            }
+            HandleSlowScroll(delta);
         }
 
-        // Reset to idle after 1.5 seconds of no scrolling
         ResetModeTimer();
     }
 
@@ -84,8 +76,7 @@ public class ScrollStateMachine
         var windows = _windowService.GetVisibleWindows();
         if (windows.Count == 0) return;
 
-        // Determine direction
-        int direction = delta > 0 ? -1 : 1; // Scroll up = previous, scroll down = next
+        int direction = GetDirection(delta);
 
         // Update focus index
         _currentFocusIndex += direction;
@@ -99,6 +90,8 @@ public class ScrollStateMachine
         WindowFocused?.Invoke(this, new WindowFocusedEventArgs(targetWindow, _currentFocusIndex));
     }
 
+    private static int GetDirection(int delta) => delta > 0 ? -1 : 1;
+
     /// <summary>
     /// Handles fast scroll - updates list selection
     /// </summary>
@@ -107,7 +100,7 @@ public class ScrollStateMachine
         var windows = _windowService.GetVisibleWindows();
         if (windows.Count == 0) return;
 
-        int direction = delta > 0 ? -1 : 1;
+        int direction = GetDirection(delta);
         _currentFocusIndex += direction;
         _currentFocusIndex = Math.Clamp(_currentFocusIndex, 0, windows.Count - 1);
 

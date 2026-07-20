@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using ScrollBarOS.Models;
 
 namespace ScrollBarOS.Services;
@@ -33,14 +32,7 @@ public class TrayService
         {
             if (File.Exists(path))
             {
-                var name = Path.GetFileNameWithoutExtension(path);
-                var icon = _windowService.GetIconForPath(path);
-                PinnedApps.Add(new PinnedAppInfo
-                {
-                    Name = name,
-                    ExecutablePath = path,
-                    Icon = icon
-                });
+                PinnedApps.Add(CreatePinnedAppInfo(path));
             }
         }
     }
@@ -59,14 +51,7 @@ public class TrayService
         _configService.Config.PinnedApps.Add(executablePath);
         _configService.SaveDebounced();
 
-        var name = Path.GetFileNameWithoutExtension(executablePath);
-        var icon = _windowService.GetIconForPath(executablePath);
-        PinnedApps.Add(new PinnedAppInfo
-        {
-            Name = name,
-            ExecutablePath = executablePath,
-            Icon = icon
-        });
+        PinnedApps.Add(CreatePinnedAppInfo(executablePath));
 
         PinnedAppsChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -86,6 +71,16 @@ public class TrayService
         }
 
         PinnedAppsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private PinnedAppInfo CreatePinnedAppInfo(string path)
+    {
+        return new PinnedAppInfo
+        {
+            Name = Path.GetFileNameWithoutExtension(path),
+            ExecutablePath = path,
+            Icon = _windowService.GetIconForPath(path)
+        };
     }
 
     /// <summary>
