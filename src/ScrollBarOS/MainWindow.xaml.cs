@@ -12,7 +12,7 @@ using ScrollBarOS.Models;
 
 namespace ScrollBarOS;
 
-public sealed partial class MainWindow : Window
+public sealed class MainWindow : Window
 {
     private readonly ConfigService _configService;
     private readonly WindowService _windowService;
@@ -26,9 +26,16 @@ public sealed partial class MainWindow : Window
     private NotifyIconHelper? _notifyIcon;
     private DispatcherTimer? _refreshTimer;
 
+    // UI elements (built in code, no XAML)
+    private Grid _rootGrid = null!;
+    private StackPanel _appIconsPanel = null!;
+    private TextBlock _cpuText = null!;
+    private TextBlock _memText = null!;
+
     public MainWindow()
     {
-        InitializeComponent();
+        // Build UI in code (no XAML file)
+        BuildUI();
 
         // Initialize services
         _configService = ConfigService.Instance;
@@ -71,6 +78,83 @@ public sealed partial class MainWindow : Window
         App.WriteLog("MainWindow constructor completed successfully");
     }
 
+    /// <summary>
+    /// Builds the entire UI in code - no XAML file needed
+    /// </summary>
+    private void BuildUI()
+    {
+        _cpuText = new TextBlock
+        {
+            Text = "CPU: --",
+            FontSize = 9,
+            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 2, 0, 2)
+        };
+
+        _memText = new TextBlock
+        {
+            Text = "RAM: --",
+            FontSize = 9,
+            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 2, 0, 2)
+        };
+
+        var settingsButton = new Button
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = new SolidColorBrush(Windows.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(4),
+            Margin = new Thickness(0, 4, 0, 0),
+            Content = new FontIcon
+            {
+                Glyph = "\uE713",
+                FontSize = 14,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF))
+            }
+        };
+        settingsButton.Click += SettingsButton_Click;
+
+        var bottomPanel = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Bottom,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Children = { _cpuText, _memText, settingsButton }
+        };
+
+        _appIconsPanel = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 12, 0, 8)
+        };
+
+        var scrollViewer = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            Content = _appIconsPanel
+        };
+
+        _rootGrid = new Grid();
+        _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(7, GridUnitType.Star) });
+        _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(3, GridUnitType.Star) });
+        _rootGrid.Children.Add(scrollViewer);
+        _rootGrid.Children.Add(bottomPanel);
+        Grid.SetRow(scrollViewer, 0);
+        Grid.SetRow(bottomPanel, 1);
+
+        var rootBorder = new Border
+        {
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0x1E, 0x1E, 0x2E)),
+            CornerRadius = new CornerRadius(20),
+            Padding = new Thickness(8),
+            Child = _rootGrid
+        };
+
+        Content = rootBorder;
+    }
+
     private void SetupWindow()
     {
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -85,12 +169,12 @@ public sealed partial class MainWindow : Window
         PositionCapsuleWindow();
 
         // Add scroll handling
-        RootGrid.PointerWheelChanged += RootGrid_PointerWheelChanged;
+        _rootGrid.PointerWheelChanged += RootGrid_PointerWheelChanged;
     }
 
     private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
-        var point = e.GetCurrentPoint(RootGrid);
+        var point = e.GetCurrentPoint(_rootGrid);
         int delta = point.Properties.MouseWheelDelta;
         if (delta != 0)
         {
@@ -131,7 +215,7 @@ public sealed partial class MainWindow : Window
     private void RefreshWindowList()
     {
         var windows = _windowService.GetVisibleWindows(true);
-        AppIconsPanel.Children.Clear();
+        _appIconsPanel.Children.Clear();
 
         foreach (var window in windows)
         {
@@ -174,7 +258,7 @@ public sealed partial class MainWindow : Window
             };
 
             ToolTipService.SetToolTip(button, window.Title);
-            AppIconsPanel.Children.Add(button);
+            _appIconsPanel.Children.Add(button);
         }
     }
 
@@ -182,8 +266,8 @@ public sealed partial class MainWindow : Window
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            CpuText.Text = $"CPU: {info.CpuUsage:F0}%";
-            MemText.Text = $"RAM: {info.MemoryUsage:F0}%";
+            _cpuText.Text = $"CPU: {info.CpuUsage:F0}%";
+            _memText.Text = $"RAM: {info.MemoryUsage:F0}%";
         });
     }
 
