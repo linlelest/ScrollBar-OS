@@ -21,10 +21,13 @@ public sealed class MainWindow : Window
     private readonly HardwareMonitorService _hardwareMonitor;
     private readonly TilingService _tilingService;
     private readonly TrayService _trayService;
+    private readonly TaskbarGuard _taskbarGuard;
 
     private nint _hwnd;
     private NotifyIconHelper? _notifyIcon;
     private DispatcherTimer? _refreshTimer;
+    private SidePanelWindow? _sidePanel;
+    private TilingWindow? _tilingWindow;
 
     // UI elements (built in code, no XAML)
     private Grid _rootGrid = null!;
@@ -55,6 +58,7 @@ public sealed class MainWindow : Window
         _hardwareMonitor = new HardwareMonitorService();
         _tilingService = new TilingService(_windowService);
         _trayService = new TrayService(_windowService);
+        _taskbarGuard = new TaskbarGuard(_taskbarService);
 
         // Set window properties
         SetupWindow();
@@ -78,6 +82,9 @@ public sealed class MainWindow : Window
 
         // Populate window list
         RefreshWindowList();
+
+        // Refresh pinned apps UI
+        RefreshPinnedApps();
 
         // Refresh timer
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -125,6 +132,28 @@ public sealed class MainWindow : Window
             _pinnedAppsPanel.Children.Add(pinBtn);
         }
 
+        // Tray expand button (left arrow, above CPU) - opens tray icons panel
+        var trayExpandButton = new Button
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0), Padding = new Thickness(4), Margin = new Thickness(0, 2, 0, 2),
+            Content = new FontIcon { Glyph = "\uE76B", FontSize = 12, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)) }
+        };
+        ToolTipService.SetToolTip(trayExpandButton, "System Tray");
+        trayExpandButton.Click += TrayExpandButton_Click;
+
+        // Three-dot menu button - opens system quick-settings panel
+        var menuButton = new Button
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0), Padding = new Thickness(4), Margin = new Thickness(0, 2, 0, 2),
+            Content = new FontIcon { Glyph = "\uE712", FontSize = 12, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)) }
+        };
+        ToolTipService.SetToolTip(menuButton, "Quick Settings");
+        menuButton.Click += MenuButton_Click;
+
         // Settings button
         var settingsButton = new Button
         {
@@ -135,7 +164,7 @@ public sealed class MainWindow : Window
         };
         settingsButton.Click += SettingsButton_Click;
 
-        // Tiling button
+        // Tiling button - opens the tiling configuration window
         var tilingButton = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -146,12 +175,12 @@ public sealed class MainWindow : Window
         ToolTipService.SetToolTip(tilingButton, "Tile Windows");
         tilingButton.Click += TilingButton_Click;
 
-        // Bottom panel: dateTime + hardware + pinned apps + tiling + settings
+        // Bottom panel: trayExpand + menu + dateTime + hardware + pinned apps + tiling + settings
         var bottomPanel = new StackPanel
         {
             VerticalAlignment = VerticalAlignment.Bottom,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Children = { _dateTimeText, _cpuText, _memText, _diskText, _netText, _pinnedAppsPanel, tilingButton, settingsButton }
+            Children = { trayExpandButton, menuButton, _dateTimeText, _cpuText, _memText, _diskText, _netText, _pinnedAppsPanel, tilingButton, settingsButton }
         };
 
         // App icons area
@@ -313,6 +342,7 @@ public sealed class MainWindow : Window
             };
             flyout.Items.Add(minimizeItem);
             flyout.Items.Add(closeItem);
+            AddPinOption(flyout, window);
             button.ContextFlyout = flyout;
 
             // Hover animation: scale up
@@ -448,10 +478,12 @@ public sealed class MainWindow : Window
         if (config.HideTaskbar)
         {
             _taskbarService.Hide();
+            _taskbarGuard.MarkHidden();
         }
         else
         {
             _taskbarService.Restore();
+            _taskbarGuard.MarkRestored();
         }
 
         // Widget visibility
@@ -487,10 +519,43 @@ public sealed class MainWindow : Window
 
     private void TilingButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_currentWindows.Count > 0)
+        // Open the independent tiling configuration window
+        if (_tilingWindow == null)
         {
-            _tilingService.TileWindows(_currentWindows);
+            _tilingWindow = new TilingWindow(_windowService, _tilingService);
+            _tilingWindow.Closed += (s, args) => _tilingWindow = null;
         }
+        _tilingWindow.Activate();
+    }
+
+    private void TrayExpandButton_Click(object sender, RoutedEventArgs e)
+    {
+        ToggleSidePanel(SidePanelWindow.PanelMode.TrayIcons);
+    }
+
+    private void MenuButton_Click(object sender, RoutedEventArgs e)
+    {
+        ToggleSidePanel(SidePanelWindow.PanelMode.SystemMenu);
+    }
+
+    private void ToggleSidePanel(SidePanelWindow.PanelMode mode)
+    {
+        if (_sidePanel != null)
+        {
+            _sidePanel.Close();
+            _sidePanel = null;
+            return;
+        }
+
+        // Get the capsule window's position to anchor the panel
+        var appWindow = AppWindow.GetFromWindowId(Win32Interop.GetWindowIdFromWindow(_hwnd));
+        var bounds = appWindow.Position;
+        var size = appWindow.Size;
+        var anchorRect = new RectInt32(bounds.X, bounds.Y, size.Width, size.Height);
+
+        _sidePanel = new SidePanelWindow(mode, _windowService, _trayService, anchorRect);
+        _sidePanel.Closed += (s, args) => _sidePanel = null;
+        _sidePanel.Activate();
     }
 
     private void PinnedApp_Click(object sender, RoutedEventArgs e)
@@ -501,6 +566,51 @@ public sealed class MainWindow : Window
             if (index < pinnedApps.Count)
             {
                 _trayService.LaunchPinnedApp(pinnedApps[index]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds a "Pin to quick launch" option to an app icon's context menu
+    /// </summary>
+    private void AddPinOption(MenuFlyout flyout, WindowInfo window)
+    {
+        var pinItem = new MenuFlyoutItem { Text = "Pin to Quick Launch", Tag = window };
+        pinItem.Click += (s, e) =>
+        {
+            if (s is MenuFlyoutItem item && item.Tag is WindowInfo wi && !string.IsNullOrEmpty(wi.ExecutablePath))
+            {
+                _trayService.PinApp(wi.ExecutablePath);
+                RefreshPinnedApps();
+            }
+        };
+        flyout.Items.Add(pinItem);
+    }
+
+    /// <summary>
+    /// Refreshes the pinned apps panel UI
+    /// </summary>
+    private void RefreshPinnedApps()
+    {
+        var pinnedApps = _trayService.PinnedApps;
+        for (int i = 0; i < _pinnedAppsPanel.Children.Count; i++)
+        {
+            if (_pinnedAppsPanel.Children[i] is Button btn)
+            {
+                if (i < pinnedApps.Count)
+                {
+                    // Show the pinned app icon
+                    var icon = pinnedApps[i].Icon;
+                    btn.Content = icon != null
+                        ? (object)new Image { Source = icon, Width = 16, Height = 16 }
+                        : new FontIcon { Glyph = "\uE718", FontSize = 10, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF)) };
+                    ToolTipService.SetToolTip(btn, pinnedApps[i].Name);
+                }
+                else
+                {
+                    btn.Content = new FontIcon { Glyph = "\uE718", FontSize = 10, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x44, 0xFF, 0xFF, 0xFF)) };
+                    ToolTipService.SetToolTip(btn, "Empty slot");
+                }
             }
         }
     }
@@ -518,6 +628,7 @@ public sealed class MainWindow : Window
         _notifyIcon?.Dispose();
         _hardwareMonitor.Stop();
         _taskbarService.Restore();
+        _taskbarGuard.Dispose();
         _configService.ConfigChanged -= OnConfigChanged;
     }
 
