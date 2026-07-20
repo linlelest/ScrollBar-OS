@@ -416,7 +416,7 @@ public class NotifyIconHelper : IDisposable
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern nint LoadIcon(nint hInstance, nint lpIconName);
 
-    [DllImport("user32.dll")]
+    [DllImport("kernel32.dll")]
     private static extern nint GetModuleHandle(string? lpModuleName);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
