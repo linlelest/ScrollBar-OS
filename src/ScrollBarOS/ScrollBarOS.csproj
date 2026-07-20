@@ -13,6 +13,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12</LangVersion>
     <SelfContained>true</SelfContained>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <PublishTrimmed>false</PublishTrimmed>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <AssemblyName>ScrollBarOS</AssemblyName>
