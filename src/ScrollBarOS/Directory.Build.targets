@@ -1,9 +1,0 @@
-<Project>
-  <!-- Override PRI generation targets that require Visual Studio AppxPackage tools -->
-  <!-- These tools are not available on GitHub Actions runners without full VS installation -->
-  <Target Name="_ExpandPriContent" />
-  <Target Name="ExpandPriContent" />
-  <Target Name="_GeneratePriFile" />
-  <Target Name="GeneratePriFile" />
-  <Target Name="_MrtCorePriGen" />
-</Project>

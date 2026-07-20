@@ -21,8 +21,6 @@
     <Authors>ScrollBar-OS Team</Authors>
     <Description>A lightweight Windows desktop enhancement tool with capsule-style UI</Description>
     <NoWarn>$(NoWarn);CS8305;CS0067;CS0169</NoWarn>
-    <GeneratePriFile>false</GeneratePriFile>
-    <EnableMsixTooling>false</EnableMsixTooling>
   </PropertyGroup>
 
   <ItemGroup>
