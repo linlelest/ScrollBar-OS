@@ -9,38 +9,67 @@ public partial class App : Application
 
     public static Window? MainWindow { get; private set; }
 
+    private static readonly string LogDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ScrollBarOS");
+    private static readonly string LogPath = Path.Combine(LogDir, "crash.log");
+
     public App()
     {
+        WriteLog("App constructor started");
         InitializeComponent();
+        WriteLog("App InitializeComponent done");
         UnhandledException += App_UnhandledException;
     }
 
     private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
         e.Handled = true;
-        System.Diagnostics.Debug.WriteLine($"Unhandled exception: {e.Exception}");
+        WriteLog($"UnhandledException: {e.Exception}");
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Single instance check
-        _mutex = new Mutex(true, MutexName, out bool createdNew);
-        if (!createdNew)
+        try
         {
-            // Another instance is already running, exit
-            _mutex.Dispose();
-            _mutex = null;
-            System.Diagnostics.Process.GetCurrentProcess().Kill();
-            return;
-        }
+            WriteLog("App.OnLaunched started");
 
-        MainWindow = new MainWindow();
-        MainWindow.Closed += (s, e) =>
+            // Single instance check
+            _mutex = new Mutex(true, MutexName, out bool createdNew);
+            if (!createdNew)
+            {
+                _mutex.Dispose();
+                _mutex = null;
+                WriteLog("Another instance running, exiting");
+                System.Diagnostics.Process.GetCurrentProcess().Kill();
+                return;
+            }
+
+            WriteLog("Creating MainWindow...");
+            MainWindow = new MainWindow();
+            WriteLog("MainWindow created, activating...");
+            MainWindow.Closed += (s, e) =>
+            {
+                _mutex?.ReleaseMutex();
+                _mutex?.Dispose();
+                _mutex = null;
+            };
+            MainWindow.Activate();
+            WriteLog("MainWindow activated successfully");
+        }
+        catch (Exception ex)
         {
-            _mutex?.ReleaseMutex();
-            _mutex?.Dispose();
-            _mutex = null;
-        };
-        MainWindow.Activate();
+            WriteLog($"FATAL in OnLaunched: {ex}");
+            throw;
+        }
+    }
+
+    public static void WriteLog(string message)
+    {
+        try
+        {
+            Directory.CreateDirectory(LogDir);
+            File.AppendAllText(LogPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}\n");
+        }
+        catch { }
     }
 }
