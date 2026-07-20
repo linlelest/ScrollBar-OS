@@ -27,37 +27,49 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Initialize services
-        _configService = ConfigService.Instance;
-        _windowService = new WindowService();
-        _scrollStateMachine = new ScrollStateMachine(_windowService);
-        _taskbarService = new TaskbarService();
-        _hardwareMonitor = new HardwareMonitorService();
-        _tilingService = new TilingService(_windowService);
-        _trayService = new TrayService(_windowService);
+        try
+        {
+            // Initialize services
+            _configService = ConfigService.Instance;
+            _windowService = new WindowService();
+            _scrollStateMachine = new ScrollStateMachine(_windowService);
+            _taskbarService = new TaskbarService();
+            _hardwareMonitor = new HardwareMonitorService();
+            _tilingService = new TilingService(_windowService);
+            _trayService = new TrayService(_windowService);
 
-        // Set window properties
-        SetupWindow();
+            // Set window properties
+            SetupWindow();
 
-        // Apply initial configuration
-        ApplyConfiguration();
+            // Apply initial configuration
+            ApplyConfiguration();
 
-        // Start hardware monitoring
-        _hardwareMonitor.Start();
+            // Start hardware monitoring
+            _hardwareMonitor.Start();
 
-        // Subscribe to config changes
-        _configService.ConfigChanged += OnConfigChanged;
+            // Subscribe to config changes
+            _configService.ConfigChanged += OnConfigChanged;
 
-        // Wire up capsule events
-        Capsule.SettingsRequested += Capsule_SettingsRequested;
+            // Wire up capsule events
+            Capsule.SettingsRequested += Capsule_SettingsRequested;
 
-        // Wire up scroll state machine
-        _scrollStateMachine.ModeChanged += ScrollStateMachine_ModeChanged;
+            // Wire up scroll state machine
+            _scrollStateMachine.ModeChanged += ScrollStateMachine_ModeChanged;
 
-        // Create system tray icon
-        SetupTrayIcon();
+            // Create system tray icon (uses its own message window)
+            SetupTrayIcon();
 
-        Closed += MainWindow_Closed;
+            Closed += MainWindow_Closed;
+        }
+        catch (Exception ex)
+        {
+            // Log crash to file for diagnosis
+            var logPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "ScrollBarOS", "crash.log");
+            try { File.WriteAllText(logPath, $"{DateTime.Now}\n{ex}"); } catch { }
+            throw;
+        }
     }
 
     private void SetupWindow()
@@ -181,12 +193,14 @@ public sealed partial class MainWindow : Window
 }
 
 /// <summary>
-/// Helper class for system tray icon using Shell_NotifyIcon
+/// System tray icon using a dedicated message-only window (safe for WinUI 3)
 /// </summary>
 public class NotifyIconHelper : IDisposable
 {
-    private readonly nint _hwnd;
+    private nint _messageHwnd;
+    private nint _mainHwnd;
     private readonly uint _callbackMessage = 0x0400 + 1; // WM_APP + 1
+    private const string MESSAGE_WINDOW_CLASS = "ScrollBarOS_TrayMsgWnd";
 
     public event Action? OnShowSettings;
     public event Action? OnExit;
@@ -213,6 +227,21 @@ public class NotifyIconHelper : IDisposable
         public uint dwInfoFlags;
     }
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct WNDCLASS
+    {
+        public uint style;
+        public nint lpfnWndProc;
+        public int cbClsExtra;
+        public int cbWndExtra;
+        public nint hInstance;
+        public nint hIcon;
+        public nint hCursor;
+        public nint hbrBackground;
+        public string? lpszMenuName;
+        public string lpszClassName;
+    }
+
     private const uint NIF_MESSAGE = 0x00000001;
     private const uint NIF_ICON = 0x00000002;
     private const uint NIF_TIP = 0x00000004;
@@ -220,69 +249,78 @@ public class NotifyIconHelper : IDisposable
     private const uint NIM_DELETE = 0x00000002;
     private const uint WM_LBUTTONUP = 0x0202;
     private const uint WM_RBUTTONUP = 0x0205;
+    private const uint WM_DESTROY = 0x0002;
+    private const nint HWND_MESSAGE = -3;
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern bool Shell_NotifyIcon(uint dwMessage, ref NOTIFYICONDATA lpData);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    private static extern nint LoadIcon(nint hInstance, string lpIconName);
+    private static extern nint LoadIcon(nint hInstance, nint lpIconName);
 
     [DllImport("user32.dll")]
     private static extern nint GetModuleHandle(string? lpModuleName);
 
-    private nint _oldWndProc;
-    private delegate nint WndProcDelegate(nint hWnd, uint msg, nint wParam, nint lParam);
-    private WndProcDelegate? _wndProcDelegate;
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern ushort RegisterClass(ref WNDCLASS lpWndClass);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern nint CreateWindowEx(
+        uint dwExStyle, string lpClassName, string? lpWindowName,
+        uint dwStyle, int X, int Y, int nWidth, int nHeight,
+        nint hWndParent, nint hMenu, nint hInstance, nint lpParam);
 
     [DllImport("user32.dll")]
-    private static extern nint SetWindowLongPtr(nint hWnd, int nIndex, nint dwNewLong);
-
-    [DllImport("user32.dll")]
-    private static extern nint GetWindowLongPtr(nint hWnd, int nIndex);
-
-    [DllImport("user32.dll")]
-    private static extern nint CallWindowProc(nint lpPrevWndFunc, nint hWnd, uint Msg, nint wParam, nint lParam);
+    private static extern bool DestroyWindow(nint hWnd);
 
     [DllImport("user32.dll")]
     private static extern nint DefWindowProc(nint hWnd, uint Msg, nint wParam, nint lParam);
 
-    private const int GWLP_WNDPROC = -4;
+    private delegate nint WndProcDelegate(nint hWnd, uint msg, nint wParam, nint lParam);
+    private WndProcDelegate? _wndProcDelegate;
 
-    public NotifyIconHelper(nint hwnd)
+    public NotifyIconHelper(nint mainHwnd)
     {
-        _hwnd = hwnd;
+        _mainHwnd = mainHwnd;
     }
 
     public void Create()
     {
-        // Subclass the window to receive tray icon messages
-        _wndProcDelegate = WndProc;
-        _oldWndProc = GetWindowLongPtr(_hwnd, GWLP_WNDPROC);
-        SetWindowLongPtr(_hwnd, GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(_wndProcDelegate));
+        nint hInstance = GetModuleHandle(null);
 
+        // Keep delegate alive to prevent GC
+        _wndProcDelegate = MessageWndProc;
+
+        var wc = new WNDCLASS
+        {
+            lpfnWndProc = Marshal.GetFunctionPointerForDelegate(_wndProcDelegate),
+            hInstance = hInstance,
+            lpszClassName = MESSAGE_WINDOW_CLASS
+        };
+        RegisterClass(ref wc);
+
+        // Create a message-only window (no visible UI)
+        _messageHwnd = CreateWindowEx(
+            0, MESSAGE_WINDOW_CLASS, null, 0,
+            0, 0, 0, 0,
+            HWND_MESSAGE, nint.Zero, hInstance, nint.Zero);
+
+        // Add tray icon
         var nid = new NOTIFYICONDATA
         {
             cbSize = Marshal.SizeOf<NOTIFYICONDATA>(),
-            hWnd = _hwnd,
+            hWnd = _messageHwnd,
             uID = 1,
             uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP,
             uCallbackMessage = _callbackMessage,
-            hIcon = LoadDefaultIcon(),
+            hIcon = LoadIcon(hInstance, 32512), // IDI_APPLICATION
             szTip = "ScrollBar OS"
         };
 
         Shell_NotifyIcon(NIM_ADD, ref nid);
     }
 
-    private nint LoadDefaultIcon()
-    {
-        // Use the default application icon
-        nint hModule = GetModuleHandle(null);
-        nint icon = LoadIcon(hModule, "32512"); // IDI_APPLICATION
-        return icon;
-    }
-
-    private nint WndProc(nint hWnd, uint msg, nint wParam, nint lParam)
+    private nint MessageWndProc(nint hWnd, uint msg, nint wParam, nint lParam)
     {
         if (msg == _callbackMessage)
         {
@@ -293,33 +331,32 @@ public class NotifyIconHelper : IDisposable
             }
             else if (mouseMsg == WM_RBUTTONUP)
             {
-                ShowContextMenu();
+                OnToggleTaskbar?.Invoke();
             }
             return nint.Zero;
         }
 
-        return CallWindowProc(_oldWndProc, hWnd, msg, wParam, lParam);
-    }
+        if (msg == WM_DESTROY)
+        {
+            return nint.Zero;
+        }
 
-    private void ShowContextMenu()
-    {
-        // Simple approach: toggle taskbar on right-click for now
-        OnToggleTaskbar?.Invoke();
+        return DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
     public void Dispose()
     {
-        var nid = new NOTIFYICONDATA
+        if (_messageHwnd != nint.Zero)
         {
-            cbSize = Marshal.SizeOf<NOTIFYICONDATA>(),
-            hWnd = _hwnd,
-            uID = 1
-        };
-        Shell_NotifyIcon(NIM_DELETE, ref nid);
-
-        if (_oldWndProc != nint.Zero)
-        {
-            SetWindowLongPtr(_hwnd, GWLP_WNDPROC, _oldWndProc);
+            var nid = new NOTIFYICONDATA
+            {
+                cbSize = Marshal.SizeOf<NOTIFYICONDATA>(),
+                hWnd = _messageHwnd,
+                uID = 1
+            };
+            Shell_NotifyIcon(NIM_DELETE, ref nid);
+            DestroyWindow(_messageHwnd);
+            _messageHwnd = nint.Zero;
         }
     }
 }
