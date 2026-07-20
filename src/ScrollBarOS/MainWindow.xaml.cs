@@ -39,7 +39,6 @@ public sealed partial class MainWindow : Window
     {
         // Initialize XAML-defined UI
         InitializeComponent();
-
         // Ensure pinned app slots exist (3 slots)
         for (int i = 0; i < 3; i++)
         {
@@ -104,7 +103,6 @@ public sealed partial class MainWindow : Window
         _dateTimeTimer.Start();
         _dateTimeText.Text = DateTime.Now.ToString("HH:mm\nMM/dd");
 
-        Closed += MainWindow_Closed;
         App.WriteLog("MainWindow constructor completed successfully");
     }
 
@@ -114,7 +112,6 @@ public sealed partial class MainWindow : Window
     {
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
 
-        Title = "ScrollBar OS";
         ExtendsContentIntoTitleBar = true;
 
         // Remove window border/titlebar - make it a pure capsule shape
@@ -548,7 +545,7 @@ public sealed partial class MainWindow : Window
         settingsWindow.Activate();
     }
 
-    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    private void MainWindow_Closed()
     {
         _refreshTimer?.Stop();
         _dateTimeTimer?.Stop();
@@ -566,6 +563,12 @@ public sealed partial class MainWindow : Window
     public TilingService TilingServiceInstance => _tilingService;
     public HardwareMonitorService HardwareMonitorInstance => _hardwareMonitor;
     public TrayService TrayServiceInstance => _trayService;
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        MainWindow_Closed();
+        Close();
+    }
 }
 
 /// <summary>

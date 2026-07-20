@@ -52,6 +52,9 @@
                         <FontIcon Glyph="&#xE713;" FontSize="14" Foreground="#CCFFFFFF"/>
                     </Button>
                 </StackPanel>
+                <Button x:Name="CloseButton" Click="CloseButton_Click" Background="Transparent" HorizontalAlignment="Center">
+                    <FontIcon Glyph="&#xE7E8;" FontSize="20" Foreground="#CCFFFFFF"/>
+                </Button>
             </StackPanel>
         </Grid>
     </Border>

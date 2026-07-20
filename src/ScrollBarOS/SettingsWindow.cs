@@ -100,8 +100,8 @@ public class SettingsWindow : Window
         taskbarToggle.Toggled += (s, e) =>
         {
             _configService.Update(c => c.HideTaskbar = taskbarToggle.IsOn);
-            if (taskbarToggle.IsOn) _taskbarService.Hide();
-            else _taskbarService.Restore();
+            //if (taskbarToggle.IsOn) _taskbarService.Hide();
+            //else _taskbarService.Restore();
         };
         panel.Children.Add(taskbarToggle);
 
