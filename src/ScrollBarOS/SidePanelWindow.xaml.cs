@@ -1,18 +1,19 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Windowing;
+// Note: avoid using Microsoft.UI.Win32Interop as a using alias because it's a type in some SDKs
 using Windows.Graphics;
 using ScrollBarOS.Services;
 using ScrollBarOS.Models;
 using ScrollBarOS.Helpers;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using System.Linq;
 
 namespace ScrollBarOS;
 
-/// <summary>
-/// A side panel window that expands next to the capsule.
-/// Used for both tray icons and system quick-settings.
-/// </summary>
-public class SidePanelWindow : Window
+public partial class SidePanelWindow : Window
 {
     public enum PanelMode { TrayIcons, SystemMenu }
 
@@ -27,6 +28,8 @@ public class SidePanelWindow : Window
         _windowService = windowService;
         _trayService = trayService;
 
+        InitializeComponent();
+
         Title = mode == PanelMode.TrayIcons ? "Tray" : "Quick Settings";
 
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -35,7 +38,21 @@ public class SidePanelWindow : Window
         Win32Helper.RemoveWindowBorder(_hwnd);
         Win32Helper.SetWindowStyle(_hwnd, isTopmost: true, isToolWindow: true);
 
-        Content = BuildContent();
+        // Header text
+        HeaderText.Text = _mode == PanelMode.TrayIcons ? "System Tray" : "Quick Settings";
+
+        // Populate dynamic content
+        if (_mode == PanelMode.TrayIcons)
+        {
+            PopulateTrayIcons();
+        }
+        else
+        {
+            PopulateSystemMenu();
+        }
+
+        // Current date/time
+        DateTimeText.Text = DateTime.Now.ToString("yyyy-MM-dd  HH:mm:ss");
 
         // Position next to the capsule (to its left)
         var appWindow = AppWindow.GetFromWindowId(Win32Interop.GetWindowIdFromWindow(_hwnd));
@@ -48,54 +65,18 @@ public class SidePanelWindow : Window
         Closed += (s, e) => { };
     }
 
-    private UIElement BuildContent()
+    private void PopulateTrayIcons()
     {
-        var border = new Border
-        {
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xEE, 0x1E, 0x1E, 0x2E)),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(12)
-        };
-
-        var panel = new StackPanel();
-
-        // Header
-        var header = new TextBlock
-        {
-            Text = _mode == PanelMode.TrayIcons ? "System Tray" : "Quick Settings",
-            FontSize = 13,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF)),
-            Margin = new Thickness(0, 0, 0, 10)
-        };
-        panel.Children.Add(header);
-
-        if (_mode == PanelMode.TrayIcons)
-        {
-            BuildTrayIcons(panel);
-        }
-        else
-        {
-            BuildSystemMenu(panel);
-        }
-
-        border.Child = panel;
-        return border;
-    }
-
-    private void BuildTrayIcons(StackPanel panel)
-    {
-        // Show minimized windows (tray-like items)
         var windows = _windowService.GetVisibleWindows(true);
         var minimized = windows.Where(w => w.IsMinimized).ToList();
 
         if (minimized.Count == 0)
         {
-            panel.Children.Add(new TextBlock
+            ItemsPanel.Children.Add(new TextBlock
             {
                 Text = "No minimized apps",
                 FontSize = 11,
-                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF)),
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF)),
                 Margin = new Thickness(0, 8, 0, 0)
             });
             return;
@@ -107,7 +88,7 @@ public class SidePanelWindow : Window
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
-                Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 BorderThickness = new Thickness(0),
                 Padding = new Thickness(6, 5, 6, 5),
                 Margin = new Thickness(0, 2, 0, 2),
@@ -123,7 +104,7 @@ public class SidePanelWindow : Window
             {
                 Text = window.Title,
                 FontSize = 11,
-                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF)),
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF)),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 MaxWidth = 150
             });
@@ -138,13 +119,12 @@ public class SidePanelWindow : Window
                 }
             };
 
-            panel.Children.Add(btn);
+            ItemsPanel.Children.Add(btn);
         }
     }
 
-    private void BuildSystemMenu(StackPanel panel)
+    private void PopulateSystemMenu()
     {
-        // System quick settings: volume, brightness, date, network placeholders
         var items = new (string glyph, string label)[]
         {
             ("\uE767", "Volume"),
@@ -161,7 +141,7 @@ public class SidePanelWindow : Window
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
-                Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF)),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF)),
                 BorderThickness = new Thickness(0),
                 Padding = new Thickness(8, 7, 8, 7),
                 Margin = new Thickness(0, 3, 0, 3),
@@ -173,29 +153,21 @@ public class SidePanelWindow : Window
             {
                 Glyph = glyph,
                 FontSize = 13,
-                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF)),
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF)),
                 Margin = new Thickness(0, 0, 10, 0)
             });
             row.Children.Add(new TextBlock
             {
                 Text = label,
                 FontSize = 11,
-                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF)),
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF)),
                 VerticalAlignment = VerticalAlignment.Center
             });
             btn.Content = row;
 
-            panel.Children.Add(btn);
+            ItemsPanel.Children.Add(btn);
         }
 
-        // Current date/time at bottom
-        panel.Children.Add(new TextBlock
-        {
-            Text = DateTime.Now.ToString("yyyy-MM-dd  HH:mm:ss"),
-            FontSize = 10,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF)),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 12, 0, 0)
-        });
+        // Date/time is set in constructor
     }
 }

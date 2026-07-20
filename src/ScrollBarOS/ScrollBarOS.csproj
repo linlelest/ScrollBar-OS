@@ -36,5 +36,7 @@
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- SidePanelWindow.xaml is included implicitly by the SDK's default Page items -->
+
 
 </Project>
