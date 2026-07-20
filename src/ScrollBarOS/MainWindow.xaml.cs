@@ -1,6 +1,8 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Windowing;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
@@ -22,54 +24,51 @@ public sealed partial class MainWindow : Window
 
     private nint _hwnd;
     private NotifyIconHelper? _notifyIcon;
+    private DispatcherTimer? _refreshTimer;
 
     public MainWindow()
     {
         InitializeComponent();
 
-        try
-        {
-            // Initialize services
-            _configService = ConfigService.Instance;
-            _windowService = new WindowService();
-            _scrollStateMachine = new ScrollStateMachine(_windowService);
-            _taskbarService = new TaskbarService();
-            _hardwareMonitor = new HardwareMonitorService();
-            _tilingService = new TilingService(_windowService);
-            _trayService = new TrayService(_windowService);
+        // Initialize services
+        _configService = ConfigService.Instance;
+        _windowService = new WindowService();
+        _scrollStateMachine = new ScrollStateMachine(_windowService);
+        _taskbarService = new TaskbarService();
+        _hardwareMonitor = new HardwareMonitorService();
+        _tilingService = new TilingService(_windowService);
+        _trayService = new TrayService(_windowService);
 
-            // Set window properties
-            SetupWindow();
+        // Set window properties
+        SetupWindow();
 
-            // Apply initial configuration
-            ApplyConfiguration();
+        // Apply initial configuration
+        ApplyConfiguration();
 
-            // Start hardware monitoring
-            _hardwareMonitor.Start();
+        // Start hardware monitoring
+        _hardwareMonitor.Start();
+        _hardwareMonitor.InfoUpdated += HardwareMonitor_InfoUpdated;
 
-            // Subscribe to config changes
-            _configService.ConfigChanged += OnConfigChanged;
+        // Subscribe to config changes
+        _configService.ConfigChanged += OnConfigChanged;
 
-            // Wire up capsule events
-            Capsule.SettingsRequested += Capsule_SettingsRequested;
+        // Wire up scroll state machine
+        _scrollStateMachine.ModeChanged += ScrollStateMachine_ModeChanged;
 
-            // Wire up scroll state machine
-            _scrollStateMachine.ModeChanged += ScrollStateMachine_ModeChanged;
+        // Create system tray icon (uses its own message window)
+        SetupTrayIcon();
 
-            // Create system tray icon (uses its own message window)
-            SetupTrayIcon();
+        // Populate window list
+        RefreshWindowList();
 
-            Closed += MainWindow_Closed;
-        }
-        catch (Exception ex)
-        {
-            // Log crash to file for diagnosis
-            var logPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "ScrollBarOS", "crash.log");
-            try { File.WriteAllText(logPath, $"{DateTime.Now}\n{ex}"); } catch { }
-            throw;
-        }
+        // Refresh timer
+        _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _refreshTimer.Tick += (s, e) => RefreshWindowList();
+        _refreshTimer.Start();
+
+        Closed += MainWindow_Closed;
+
+        App.WriteLog("MainWindow constructor completed successfully");
     }
 
     private void SetupWindow()
@@ -84,6 +83,20 @@ public sealed partial class MainWindow : Window
 
         // Position the window as a capsule at the screen edge
         PositionCapsuleWindow();
+
+        // Add scroll handling
+        RootGrid.PointerWheelChanged += RootGrid_PointerWheelChanged;
+    }
+
+    private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(RootGrid);
+        int delta = point.Properties.MouseWheelDelta;
+        if (delta != 0)
+        {
+            _scrollStateMachine.ProcessScroll(delta);
+            e.Handled = true;
+        }
     }
 
     /// <summary>
@@ -115,12 +128,71 @@ public sealed partial class MainWindow : Window
         appWindow.MoveAndResize(new RectInt32(x, y, capsuleWidth, capsuleHeight));
     }
 
+    private void RefreshWindowList()
+    {
+        var windows = _windowService.GetVisibleWindows(true);
+        AppIconsPanel.Children.Clear();
+
+        foreach (var window in windows)
+        {
+            var button = new Button
+            {
+                Width = 44,
+                Height = 44,
+                Padding = new Thickness(4),
+                Background = new SolidColorBrush(Microsoft.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
+                CornerRadius = new CornerRadius(8),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Tag = window
+            };
+
+            if (window.Icon != null)
+            {
+                button.Content = new Image
+                {
+                    Source = window.Icon,
+                    Width = 32,
+                    Height = 32
+                };
+            }
+            else
+            {
+                button.Content = new FontIcon
+                {
+                    Glyph = "\uE737", // App icon glyph
+                    FontSize = 18,
+                    Foreground = new SolidColorBrush(Microsoft.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF))
+                };
+            }
+
+            button.Click += (s, e) =>
+            {
+                if (s is Button btn && btn.Tag is WindowInfo wi)
+                {
+                    _windowService.FocusWindow(wi);
+                }
+            };
+
+            ToolTipService.SetToolTip(button, window.Title);
+            AppIconsPanel.Children.Add(button);
+        }
+    }
+
+    private void HardwareMonitor_InfoUpdated(object? sender, HardwareInfo info)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            CpuText.Text = $"CPU: {info.CpuUsage:F0}%";
+            MemText.Text = $"RAM: {info.MemoryUsage:F0}%";
+        });
+    }
+
     private void SetupTrayIcon()
     {
         _notifyIcon = new NotifyIconHelper(_hwnd);
         _notifyIcon.OnShowSettings += () =>
         {
-            DispatcherQueue.TryEnqueue(() => Capsule_SettingsRequested(this, EventArgs.Empty));
+            DispatcherQueue.TryEnqueue(() => OpenSettings());
         };
         _notifyIcon.OnExit += () =>
         {
@@ -142,7 +214,7 @@ public sealed partial class MainWindow : Window
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            // Mode change handling - capsule updates internally
+            // Visual feedback on mode change could go here
         });
     }
 
@@ -154,9 +226,6 @@ public sealed partial class MainWindow : Window
         {
             _taskbarService.Hide();
         }
-
-        Capsule.UpdatePosition(config.CapsulePosition);
-        Capsule.UpdateAppearance(config);
     }
 
     private void OnConfigChanged(object? sender, EventArgs e)
@@ -168,22 +237,27 @@ public sealed partial class MainWindow : Window
         });
     }
 
-    private void Capsule_SettingsRequested(object? sender, EventArgs e)
+    private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
-        // Open settings as a new window
+        OpenSettings();
+    }
+
+    private void OpenSettings()
+    {
         var settingsWindow = new SettingsWindow();
         settingsWindow.Activate();
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
+        _refreshTimer?.Stop();
         _notifyIcon?.Dispose();
         _hardwareMonitor.Stop();
         _taskbarService.Restore();
         _configService.ConfigChanged -= OnConfigChanged;
     }
 
-    // Expose services to child controls
+    // Expose services
     public ConfigService ConfigServiceInstance => _configService;
     public WindowService WindowServiceInstance => _windowService;
     public ScrollStateMachine ScrollStateMachineInstance => _scrollStateMachine;

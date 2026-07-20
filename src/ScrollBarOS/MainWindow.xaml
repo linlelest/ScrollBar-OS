@@ -2,11 +2,28 @@
 <Window
     x:Class="ScrollBarOS.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:views="using:ScrollBarOS.Views">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Grid x:Name="RootGrid" Background="Transparent">
-        <!-- Capsule Control -->
-        <views:CapsuleControl x:Name="Capsule" />
+    <Grid x:Name="RootGrid" Background="#CC1E1E2E" CornerRadius="20" Padding="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="7*"/>
+            <RowDefinition Height="3*"/>
+        </Grid.RowDefinitions>
+
+        <!-- App Icons Area -->
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Hidden">
+            <StackPanel x:Name="AppIconsPanel" HorizontalAlignment="Center" Spacing="8" Padding="0,12,0,8"/>
+        </ScrollViewer>
+
+        <!-- Bottom Area -->
+        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Spacing="8">
+            <!-- Hardware Info -->
+            <TextBlock x:Name="CpuText" Text="CPU: --" FontSize="9" Foreground="#AAFFFFFF" HorizontalAlignment="Center"/>
+            <TextBlock x:Name="MemText" Text="RAM: --" FontSize="9" Foreground="#AAFFFFFF" HorizontalAlignment="Center"/>
+            <!-- Settings Button -->
+            <Button x:Name="SettingsButton" HorizontalAlignment="Center" Background="Transparent" BorderThickness="0" Padding="4" Click="SettingsButton_Click">
+                <FontIcon Glyph="&#xE713;" FontSize="14" Foreground="#CCFFFFFF"/>
+            </Button>
+        </StackPanel>
     </Grid>
 </Window>
