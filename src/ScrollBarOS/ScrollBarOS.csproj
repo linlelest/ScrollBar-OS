@@ -36,5 +36,19 @@
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Page Remove="MainWindow.xaml" />
+    <Page Remove="SettingsWindow.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <Content Include="SettingsWindow.xaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 
 </Project>
