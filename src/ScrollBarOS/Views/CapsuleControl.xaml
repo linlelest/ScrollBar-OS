@@ -15,7 +15,8 @@
           HorizontalAlignment="Right"
           Margin="0,0,8,0"
           PointerEntered="CapsuleRoot_PointerEntered"
-          PointerExited="CapsuleRoot_PointerExited">
+          PointerExited="CapsuleRoot_PointerExited"
+          PointerWheelChanged="CapsuleRoot_PointerWheelChanged">
 
         <Grid.RowDefinitions>
             <!-- Scrollable app icons area (70%) -->
@@ -131,6 +132,14 @@
                     HorizontalAlignment="Center"
                     Click="SettingsButton_Click">
                 <FontIcon Glyph="&#xE713;" FontSize="14" Foreground="#CCFFFFFF"/>
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem x:Name="OpenSettingsItem" Text="Settings" Click="SettingsButton_Click"/>
+                        <MenuFlyoutItem x:Name="OpenTilingItem" Text="Window Tiling" Click="TilingMenuItem_Click"/>
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutItem x:Name="ExitItem" Text="Exit" Click="ExitMenuItem_Click"/>
+                    </MenuFlyout>
+                </Button.Flyout>
             </Button>
         </Grid>
 

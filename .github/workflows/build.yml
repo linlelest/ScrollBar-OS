@@ -49,8 +49,6 @@ jobs:
           --runtime win-${{ matrix.platform }} `
           --self-contained true `
           --output ./publish/ScrollBarOS-win-${{ matrix.platform }} `
-          -p:PublishTrimmed=true `
-          -p:TrimMode=partial `
           -p:Platform=${{ matrix.platform }}
 
     - name: Create ZIP archive

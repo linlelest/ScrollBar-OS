@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using ScrollBarOS.Models;
 using ScrollBarOS.Services;
+using ScrollBarOS.Helpers;
 using System.Collections.ObjectModel;
 
 namespace ScrollBarOS.Views;
@@ -14,6 +15,7 @@ public sealed partial class CapsuleControl : UserControl
     private readonly ConfigService _configService;
     private WindowService? _windowService;
     private HardwareMonitorService? _hardwareMonitor;
+    private ScrollStateMachine? _scrollStateMachine;
     private TrayService? _trayService;
     private Timer? _refreshTimer;
     private Timer? _dateTimeTimer;
@@ -23,6 +25,7 @@ public sealed partial class CapsuleControl : UserControl
     public event EventHandler? SettingsRequested;
     public event EventHandler<WindowInfo>? WindowDragStarted;
     public event EventHandler<WindowInfo>? WindowSelected;
+    public event EventHandler<int>? ScrollEvent;
 
     public CapsuleControl()
     {
@@ -36,26 +39,26 @@ public sealed partial class CapsuleControl : UserControl
     private void CapsuleControl_Loaded(object sender, RoutedEventArgs e)
     {
         // Get services from parent window
-        if (Window.Current?.Content is FrameworkElement root)
+        var mainWindow = App.MainWindow as MainWindow;
+        if (mainWindow != null)
         {
-            var mainWindow = App.MainWindow as MainWindow;
-            if (mainWindow != null)
-            {
-                _windowService = mainWindow.WindowServiceInstance;
-                _hardwareMonitor = mainWindow.HardwareMonitorInstance;
+            _windowService = mainWindow.WindowServiceInstance;
+            _hardwareMonitor = mainWindow.HardwareMonitorInstance;
+            _scrollStateMachine = mainWindow.ScrollStateMachineInstance;
+            _trayService = mainWindow.TrayServiceInstance;
 
-                if (_hardwareMonitor != null)
-                {
-                    _hardwareMonitor.InfoUpdated += HardwareMonitor_InfoUpdated;
-                }
+            if (_hardwareMonitor != null)
+            {
+                _hardwareMonitor.InfoUpdated += HardwareMonitor_InfoUpdated;
             }
         }
 
-        _trayService = new TrayService(_windowService ?? new WindowService());
+        _trayService ??= new TrayService(_windowService ?? new WindowService());
 
         // Initial load
         RefreshWindowList();
         ApplyConfig();
+        UpdateCapsuleHeight();
 
         // Start refresh timer
         _refreshTimer = new Timer(_ =>
@@ -148,9 +151,29 @@ public sealed partial class CapsuleControl : UserControl
         UpdateAppearance(config);
     }
 
+    /// <summary>
+    /// Sets capsule height to configured percentage of screen height (default 33%)
+    /// </summary>
+    private void UpdateCapsuleHeight()
+    {
+        var workArea = Win32Helper.GetPrimaryMonitorWorkArea();
+        var config = _configService.Config;
+        double screenHeight = workArea.Height;
+        CapsuleRoot.Height = screenHeight * config.CapsuleHeightPercent;
+    }
+
     private void UpdateDateTime()
     {
         DateTimeText.Text = DateTime.Now.ToString("HH:mm\nMM/dd");
+    }
+
+    /// <summary>
+    /// Handles mouse wheel scroll over the capsule - core interaction
+    /// </summary>
+    public void HandlePointerWheelChanged(int delta)
+    {
+        _scrollStateMachine?.ProcessScroll(delta);
+        ScrollEvent?.Invoke(this, delta);
     }
 
     #region Event Handlers
@@ -289,6 +312,27 @@ public sealed partial class CapsuleControl : UserControl
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         SettingsRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void CapsuleRoot_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(CapsuleRoot);
+        int delta = point.Properties.MouseWheelDelta;
+        if (delta != 0)
+        {
+            HandlePointerWheelChanged(delta);
+            e.Handled = true;
+        }
+    }
+
+    private void TilingMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        (App.MainWindow as MainWindow)?.ShowTilingGrid();
+    }
+
+    private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        App.MainWindow?.Close();
     }
 
     #endregion

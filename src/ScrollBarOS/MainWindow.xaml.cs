@@ -1,6 +1,6 @@
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Composition.SystemBackdrops;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
 using ScrollBarOS.Services;
@@ -55,7 +55,39 @@ public sealed partial class MainWindow : Window
         // Wire up capsule events
         Capsule.SettingsRequested += Capsule_SettingsRequested;
 
+        // Wire up scroll state machine events
+        _scrollStateMachine.ModeChanged += ScrollStateMachine_ModeChanged;
+        _scrollStateMachine.WindowFocused += ScrollStateMachine_WindowFocused;
+
         Closed += MainWindow_Closed;
+    }
+
+    private void ScrollStateMachine_ModeChanged(object? sender, ScrollModeChangedEventArgs e)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (e.NewMode == ScrollMode.FastScroll)
+            {
+                // Show window list overlay for fast scroll
+                WindowListOverlay.Show(_windowService, _scrollStateMachine.CurrentFocusIndex);
+            }
+            else if (e.OldMode == ScrollMode.FastScroll && e.NewMode == ScrollMode.Idle)
+            {
+                // Hide overlay when returning to idle
+                WindowListOverlay.Hide();
+            }
+        });
+    }
+
+    private void ScrollStateMachine_WindowFocused(object? sender, WindowFocusedEventArgs e)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_scrollStateMachine.CurrentMode == ScrollMode.FastScroll)
+            {
+                WindowListOverlay.UpdateSelection(e.Index);
+            }
+        });
     }
 
     private void SetupWindow()

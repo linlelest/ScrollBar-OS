@@ -9,16 +9,16 @@
         <!-- Capsule Control -->
         <views:CapsuleControl x:Name="Capsule" />
 
-        <!-- Tiling Grid Overlay (hidden by default) -->
-        <views:TilingGrid x:Name="TilingGridOverlay" Visibility="Collapsed" />
+        <!-- Tiling Grid Overlay (manages own visibility) -->
+        <views:TilingGrid x:Name="TilingGridOverlay" />
 
-        <!-- Window List Overlay for fast scroll (hidden by default) -->
-        <views:WindowListOverlay x:Name="WindowListOverlay" Visibility="Collapsed" />
+        <!-- Window List Overlay for fast scroll (manages own visibility) -->
+        <views:WindowListOverlay x:Name="WindowListOverlay" />
 
-        <!-- Settings Panel (hidden by default) -->
-        <views:SettingsPanel x:Name="SettingsPanel" Visibility="Collapsed" />
+        <!-- Settings Panel (manages own visibility) -->
+        <views:SettingsPanel x:Name="SettingsPanel" />
 
-        <!-- Tray Menu (hidden by default) -->
-        <views:TrayMenu x:Name="TrayMenu" Visibility="Collapsed" />
+        <!-- Tray Menu (manages own visibility) -->
+        <views:TrayMenu x:Name="TrayMenu" />
     </Grid>
 </Window>

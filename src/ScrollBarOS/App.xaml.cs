@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using System.Runtime.InteropServices;
 
 namespace ScrollBarOS;
 
@@ -19,7 +18,6 @@ public partial class App : Application
     private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
         e.Handled = true;
-        // Log the exception for debugging
         System.Diagnostics.Debug.WriteLine($"Unhandled exception: {e.Exception}");
     }
 
@@ -32,18 +30,17 @@ public partial class App : Application
             // Another instance is already running, exit
             _mutex.Dispose();
             _mutex = null;
-            Exit();
+            System.Diagnostics.Process.GetCurrentProcess().Kill();
             return;
         }
 
         MainWindow = new MainWindow();
+        MainWindow.Closed += (s, e) =>
+        {
+            _mutex?.ReleaseMutex();
+            _mutex?.Dispose();
+            _mutex = null;
+        };
         MainWindow.Activate();
-    }
-
-    protected override void OnExit(ExitEventArgs args)
-    {
-        _mutex?.ReleaseMutex();
-        _mutex?.Dispose();
-        base.OnExit(args);
     }
 }
