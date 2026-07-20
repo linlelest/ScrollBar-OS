@@ -23,13 +23,13 @@ public class AppConfig
     public double CapsuleHeightPercent { get; set; } = 0.33;
 
     /// <summary>Icon size in pixels</summary>
-    public int IconSize { get; set; } = 36;
+    public int IconSize { get; set; } = 32;
 
     /// <summary>Font size for text elements</summary>
-    public int FontSize { get; set; } = 12;
+    public int FontSize { get; set; } = 10;
 
     /// <summary>Whether to show date/time widget</summary>
-    public bool ShowDateTimeWidget { get; set; } = false;
+    public bool ShowDateTimeWidget { get; set; } = true;
 
     /// <summary>Whether to show hardware info widget</summary>
     public bool ShowHardwareWidget { get; set; } = true;
@@ -50,7 +50,7 @@ public class AppConfig
     public int ScrollThreshold { get; set; } = 3;
 
     /// <summary>Corner radius of the capsule</summary>
-    public int CornerRadius { get; set; } = 20;
+    public int CornerRadius { get; set; } = 32;
 
     /// <summary>Background opacity (0.0 - 1.0)</summary>
     public double BackgroundOpacity { get; set; } = 0.8;

@@ -44,7 +44,6 @@ public class SettingsWindow : Window
 
         var panel = new StackPanel { Margin = new Thickness(20) };
 
-        // Title
         panel.Children.Add(new TextBlock
         {
             Text = "Settings",
@@ -53,11 +52,8 @@ public class SettingsWindow : Window
             Margin = new Thickness(0, 0, 0, 16)
         });
 
-        // 1. Capsule Position
-        panel.Children.Add(new TextBlock { Text = "Capsule Position", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
-        var positionCombo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 16) };
-        positionCombo.Items.Add(new ComboBoxItem { Content = "Left" });
-        positionCombo.Items.Add(new ComboBoxItem { Content = "Right" });
+        panel.Children.Add(CreateSectionTitle("Capsule Position"));
+        var positionCombo = CreateComboBox("Left", "Right");
         positionCombo.SelectedIndex = config.CapsulePosition == CapsulePosition.Left ? 0 : 1;
         positionCombo.SelectionChanged += (s, e) =>
         {
@@ -66,12 +62,8 @@ public class SettingsWindow : Window
         };
         panel.Children.Add(positionCombo);
 
-        // 2. Background Material
-        panel.Children.Add(new TextBlock { Text = "Background Material", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
-        var materialCombo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 16) };
-        materialCombo.Items.Add(new ComboBoxItem { Content = "Solid" });
-        materialCombo.Items.Add(new ComboBoxItem { Content = "Acrylic" });
-        materialCombo.Items.Add(new ComboBoxItem { Content = "Mica" });
+        panel.Children.Add(CreateSectionTitle("Background Material"));
+        var materialCombo = CreateComboBox("Solid", "Acrylic", "Mica");
         materialCombo.SelectedIndex = (int)config.Material;
         materialCombo.SelectionChanged += (s, e) =>
         {
@@ -79,37 +71,32 @@ public class SettingsWindow : Window
         };
         panel.Children.Add(materialCombo);
 
-        // 3. Opacity
-        panel.Children.Add(new TextBlock { Text = $"Opacity: {config.BackgroundOpacity:P0}", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
-        var opacitySlider = new Slider { Minimum = 20, Maximum = 100, Value = config.BackgroundOpacity * 100, StepFrequency = 5, Margin = new Thickness(0, 0, 0, 16) };
+        panel.Children.Add(CreateSectionTitle($"Opacity: {config.BackgroundOpacity:P0}"));
+        var opacitySlider = CreateSlider(config.BackgroundOpacity * 100, 20, 100, 5);
         opacitySlider.ValueChanged += (s, e) => _configService.Update(c => c.BackgroundOpacity = e.NewValue / 100.0);
         panel.Children.Add(opacitySlider);
 
-        // 4. Capsule Width
-        panel.Children.Add(new TextBlock { Text = $"Capsule Width: {config.CapsuleWidth}px", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
-        var widthSlider = new Slider { Minimum = 48, Maximum = 96, Value = config.CapsuleWidth, StepFrequency = 4, Margin = new Thickness(0, 0, 0, 16) };
+        panel.Children.Add(CreateSectionTitle($"Capsule Width: {config.CapsuleWidth}px"));
+        var widthSlider = CreateSlider(config.CapsuleWidth, 48, 96, 4);
         widthSlider.ValueChanged += (s, e) => _configService.Update(c => c.CapsuleWidth = (int)e.NewValue);
         panel.Children.Add(widthSlider);
 
-        // 5. Icon Size
-        panel.Children.Add(new TextBlock { Text = $"Icon Size: {config.IconSize}px", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
-        var iconSlider = new Slider { Minimum = 24, Maximum = 48, Value = config.IconSize, StepFrequency = 4, Margin = new Thickness(0, 0, 0, 16) };
+        panel.Children.Add(CreateSectionTitle($"Icon Size: {config.IconSize}px"));
+        var iconSlider = CreateSlider(config.IconSize, 24, 48, 4);
         iconSlider.ValueChanged += (s, e) => _configService.Update(c => c.IconSize = (int)e.NewValue);
         panel.Children.Add(iconSlider);
 
-        // 6. Widgets
-        panel.Children.Add(new TextBlock { Text = "Widgets", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
-        var hwToggle = new ToggleSwitch { Header = "Hardware Monitor", IsOn = config.ShowHardwareWidget, Margin = new Thickness(0, 0, 0, 8) };
+        panel.Children.Add(CreateSectionTitle("Widgets"));
+        var hwToggle = CreateToggle("Hardware Monitor", config.ShowHardwareWidget);
         hwToggle.Toggled += (s, e) => _configService.Update(c => c.ShowHardwareWidget = hwToggle.IsOn);
         panel.Children.Add(hwToggle);
 
-        var dtToggle = new ToggleSwitch { Header = "Date & Time", IsOn = config.ShowDateTimeWidget, Margin = new Thickness(0, 0, 0, 16) };
+        var dtToggle = CreateToggle("Date & Time", config.ShowDateTimeWidget, 16);
         dtToggle.Toggled += (s, e) => _configService.Update(c => c.ShowDateTimeWidget = dtToggle.IsOn);
         panel.Children.Add(dtToggle);
 
-        // 7. System
-        panel.Children.Add(new TextBlock { Text = "System", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
-        var taskbarToggle = new ToggleSwitch { Header = "Hide Taskbar", IsOn = config.HideTaskbar, Margin = new Thickness(0, 0, 0, 8) };
+        panel.Children.Add(CreateSectionTitle("System"));
+        var taskbarToggle = CreateToggle("Hide Taskbar", config.HideTaskbar);
         taskbarToggle.Toggled += (s, e) =>
         {
             _configService.Update(c => c.HideTaskbar = taskbarToggle.IsOn);
@@ -118,7 +105,7 @@ public class SettingsWindow : Window
         };
         panel.Children.Add(taskbarToggle);
 
-        var startupToggle = new ToggleSwitch { Header = "Start with Windows", IsOn = config.StartWithWindows, Margin = new Thickness(0, 0, 0, 16) };
+        var startupToggle = CreateToggle("Start with Windows", config.StartWithWindows, 16);
         startupToggle.Toggled += (s, e) =>
         {
             _configService.Update(c => c.StartWithWindows = startupToggle.IsOn);
@@ -126,11 +113,8 @@ public class SettingsWindow : Window
         };
         panel.Children.Add(startupToggle);
 
-        // 8. Language
-        panel.Children.Add(new TextBlock { Text = "Language", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
-        var langCombo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 16) };
-        langCombo.Items.Add(new ComboBoxItem { Content = "简体中文" });
-        langCombo.Items.Add(new ComboBoxItem { Content = "English" });
+        panel.Children.Add(CreateSectionTitle("Language"));
+        var langCombo = CreateComboBox("简体中文", "English");
         langCombo.SelectedIndex = config.Language == AppLanguage.Chinese ? 0 : 1;
         langCombo.SelectionChanged += (s, e) =>
         {
@@ -139,7 +123,6 @@ public class SettingsWindow : Window
         };
         panel.Children.Add(langCombo);
 
-        // About
         panel.Children.Add(new TextBlock
         {
             Text = "ScrollBar OS v1.0.0",
@@ -150,6 +133,31 @@ public class SettingsWindow : Window
 
         scrollViewer.Content = panel;
         return scrollViewer;
+    }
+
+    private static TextBlock CreateSectionTitle(string text)
+    {
+        return new TextBlock { Text = text, FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) };
+    }
+
+    private static ComboBox CreateComboBox(params string[] items)
+    {
+        var combo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 16) };
+        foreach (var item in items)
+        {
+            combo.Items.Add(new ComboBoxItem { Content = item });
+        }
+        return combo;
+    }
+
+    private static Slider CreateSlider(double value, double minimum, double maximum, double step)
+    {
+        return new Slider { Minimum = minimum, Maximum = maximum, Value = value, StepFrequency = step, Margin = new Thickness(0, 0, 0, 16) };
+    }
+
+    private static ToggleSwitch CreateToggle(string header, bool isOn, int bottomMargin = 8)
+    {
+        return new ToggleSwitch { Header = header, IsOn = isOn, Margin = new Thickness(0, 0, 0, bottomMargin) };
     }
 
     private void SetStartup(bool enable)
