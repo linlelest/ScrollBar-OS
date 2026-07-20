@@ -40,7 +40,7 @@ jobs:
       run: dotnet restore ${{ env.SOLUTION_NAME }}
 
     - name: Build
-      run: dotnet build ${{ env.SOLUTION_NAME }} --configuration ${{ matrix.configuration }} --platform ${{ matrix.platform }} --no-restore
+      run: dotnet build ${{ env.SOLUTION_NAME }} --configuration ${{ matrix.configuration }} -p:Platform=${{ matrix.platform }} --no-restore
 
     - name: Publish (Self-contained)
       run: |
