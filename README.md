@@ -2,7 +2,6 @@
 
 <div align="center">
 
-![ScrollBar OS](src/ScrollBarOS/Assets/icon.png)
 
 **轻量级 Windows 桌面增强工具 - 胶囊式窗口管理器**
 
@@ -37,8 +36,8 @@ ScrollBar OS 是一款基于 **WinUI 3** 和 **.NET 8** 开发的 Windows 桌面
 
 | 区域 | 功能 |
 |:---|:---|
-| 上部滚动区 (70%) | 应用图标流式列表，悬浮显示 Tooltip |
-| 下部固定区 (30%) | 小组件 + 3个微型固定应用 + 设置按钮 |
+| 上部滚动区 | 应用图标流式列表，悬浮显示 Tooltip |
+| 下部固定区 | 小组件 + 3个微型固定应用 + 设置按钮 |
 
 - 图标默认 36×36，圆角 8px
 - 悬浮时图标放大 1.15 倍（弹性动画）
@@ -278,7 +277,7 @@ dotnet publish src/ScrollBarOS/ScrollBarOS.csproj -c Release -r win-x64 --self-c
 - [x] 窗口平铺算法
 - [x] 任务栏隐藏
 - [x] 硬件监控
-- [x] 设置面板
+- [ ] 设置面板
 - [x] 多语言支持
 - [x] GitHub Actions CI/CD
 
