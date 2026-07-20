@@ -378,7 +378,7 @@ public sealed class MainWindow : Window
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (e.NewMode == ScrollMode.FastScroll)
+            if (e.NewMode == Services.ScrollMode.FastScroll)
             {
                 // Switch to list mode
                 _isListMode = true;
@@ -386,7 +386,7 @@ public sealed class MainWindow : Window
                 _windowListPanel.Visibility = Visibility.Visible;
                 RebuildWindowList();
             }
-            else if (e.NewMode == ScrollMode.Idle && _isListMode)
+            else if (e.NewMode == Services.ScrollMode.Idle && _isListMode)
             {
                 // Exit list mode
                 _isListMode = false;
@@ -422,10 +422,7 @@ public sealed class MainWindow : Window
                 Padding = new Thickness(6, 4, 6, 4),
                 Foreground = new SolidColorBrush(i == _listSelectedIndex
                     ? Windows.UI.Color.FromArgb(0xFF, 0x4C, 0xC2, 0xFF)
-                    : Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF)),
-                Background = new SolidColorBrush(i == _listSelectedIndex
-                    ? Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)
-                    : Microsoft.UI.Colors.Transparent)
+                    : Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF))
             };
             _windowListPanel.Children.Add(tb);
         }
@@ -440,9 +437,6 @@ public sealed class MainWindow : Window
                 tb.Foreground = new SolidColorBrush(i == _listSelectedIndex
                     ? Windows.UI.Color.FromArgb(0xFF, 0x4C, 0xC2, 0xFF)
                     : Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF));
-                tb.Background = new SolidColorBrush(i == _listSelectedIndex
-                    ? Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)
-                    : Microsoft.UI.Colors.Transparent);
             }
         }
     }
