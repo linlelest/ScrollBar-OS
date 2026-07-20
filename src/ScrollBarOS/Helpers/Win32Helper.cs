@@ -332,6 +332,45 @@ public static class Win32Helper
     /// </summary>
     public static void ShowWindow(nint hwnd) => ShowWindow(hwnd, SW_SHOW);
 
+    private const int SW_MINIMIZE = 6;
+    private const uint WM_CLOSE = 0x0010;
+    private const uint WS_CAPTION = 0x00C00000;
+    private const uint WS_THICKFRAME = 0x00040000;
+    private const uint WS_BORDER = 0x00800000;
+    private const uint WS_DLGFRAME = 0x00400000;
+    private const uint WS_SYSMENU = 0x00080000;
+    private const uint WS_MINIMIZEBOX = 0x00020000;
+    private const uint WS_MAXIMIZEBOX = 0x00010000;
+
+    [DllImport("user32.dll")]
+    private static extern bool PostMessage(nint hWnd, uint Msg, nint wParam, nint lParam);
+
+    /// <summary>
+    /// Minimizes a window
+    /// </summary>
+    public static void MinimizeWindow(nint hwnd) => ShowWindow(hwnd, SW_MINIMIZE);
+
+    /// <summary>
+    /// Closes a window by posting WM_CLOSE
+    /// </summary>
+    public static void CloseWindow(nint hwnd) => PostMessage(hwnd, WM_CLOSE, nint.Zero, nint.Zero);
+
+    /// <summary>
+    /// Removes window border/titlebar to make it borderless
+    /// </summary>
+    public static void RemoveWindowBorder(nint hwnd)
+    {
+        int style = GetWindowLong(hwnd, GWL_STYLE);
+        style &= ~(int)(WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_DLGFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+        SetWindowLong(hwnd, GWL_STYLE, style);
+
+        // Also add WS_EX_LAYERED for transparent background support
+        int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+        exStyle |= (int)WS_EX_LAYERED;
+        SetWindowLong(hwnd, GWL_EXSTYLE, exStyle);
+        SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+    }
+
     #endregion
 
     #region Taskbar

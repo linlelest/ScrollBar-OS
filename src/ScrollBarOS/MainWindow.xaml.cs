@@ -31,6 +31,16 @@ public sealed class MainWindow : Window
     private StackPanel _appIconsPanel = null!;
     private TextBlock _cpuText = null!;
     private TextBlock _memText = null!;
+    private TextBlock _diskText = null!;
+    private TextBlock _netText = null!;
+    private TextBlock _dateTimeText = null!;
+    private StackPanel _pinnedAppsPanel = null!;
+    private Border _rootBorder = null!;
+    private DispatcherTimer? _dateTimeTimer;
+    private bool _isListMode = false;
+    private StackPanel _windowListPanel = null!;
+    private int _listSelectedIndex = 0;
+    private List<WindowInfo> _currentWindows = new();
 
     public MainWindow()
     {
@@ -61,6 +71,7 @@ public sealed class MainWindow : Window
 
         // Wire up scroll state machine
         _scrollStateMachine.ModeChanged += ScrollStateMachine_ModeChanged;
+        _scrollStateMachine.WindowFocused += ScrollStateMachine_WindowFocused;
 
         // Create system tray icon (uses its own message window)
         SetupTrayIcon();
@@ -73,6 +84,12 @@ public sealed class MainWindow : Window
         _refreshTimer.Tick += (s, e) => RefreshWindowList();
         _refreshTimer.Start();
 
+        // Date/Time timer
+        _dateTimeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _dateTimeTimer.Tick += (s, e) => _dateTimeText.Text = DateTime.Now.ToString("HH:mm\nMM/dd");
+        _dateTimeTimer.Start();
+        _dateTimeText.Text = DateTime.Now.ToString("HH:mm\nMM/dd");
+
         Closed += MainWindow_Closed;
 
         App.WriteLog("MainWindow constructor completed successfully");
@@ -83,58 +100,71 @@ public sealed class MainWindow : Window
     /// </summary>
     private void BuildUI()
     {
-        _cpuText = new TextBlock
-        {
-            Text = "CPU: --",
-            FontSize = 9,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 2, 0, 2)
-        };
+        // Hardware info texts
+        _cpuText = new TextBlock { Text = "CPU: --", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1) };
+        _memText = new TextBlock { Text = "RAM: --", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1) };
+        _diskText = new TextBlock { Text = "Disk: --", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1) };
+        _netText = new TextBlock { Text = "Net: --", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1) };
 
-        _memText = new TextBlock
-        {
-            Text = "RAM: --",
-            FontSize = 9,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 2, 0, 2)
-        };
+        // Date/Time widget
+        _dateTimeText = new TextBlock { Text = "", FontSize = 9, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
 
+        // 3 Pinned quick-launch apps
+        _pinnedAppsPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 4) };
+        for (int i = 0; i < 3; i++)
+        {
+            var pinBtn = new Button
+            {
+                Width = 20, Height = 20, Padding = new Thickness(0),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                BorderThickness = new Thickness(0), Margin = new Thickness(2, 0, 2, 0),
+                Content = new FontIcon { Glyph = "\uE718", FontSize = 10, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF)) },
+                Tag = i
+            };
+            pinBtn.Click += PinnedApp_Click;
+            _pinnedAppsPanel.Children.Add(pinBtn);
+        }
+
+        // Settings button
         var settingsButton = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0),
-            Padding = new Thickness(4),
-            Margin = new Thickness(0, 4, 0, 0),
-            Content = new FontIcon
-            {
-                Glyph = "\uE713",
-                FontSize = 14,
-                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF))
-            }
+            BorderThickness = new Thickness(0), Padding = new Thickness(4), Margin = new Thickness(0, 2, 0, 0),
+            Content = new FontIcon { Glyph = "\uE713", FontSize = 14, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF)) }
         };
         settingsButton.Click += SettingsButton_Click;
 
+        // Tiling button
+        var tilingButton = new Button
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0), Padding = new Thickness(4), Margin = new Thickness(0, 2, 0, 0),
+            Content = new FontIcon { Glyph = "\uE740", FontSize = 12, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)) }
+        };
+        ToolTipService.SetToolTip(tilingButton, "Tile Windows");
+        tilingButton.Click += TilingButton_Click;
+
+        // Bottom panel: dateTime + hardware + pinned apps + tiling + settings
         var bottomPanel = new StackPanel
         {
             VerticalAlignment = VerticalAlignment.Bottom,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Children = { _cpuText, _memText, settingsButton }
+            Children = { _dateTimeText, _cpuText, _memText, _diskText, _netText, _pinnedAppsPanel, tilingButton, settingsButton }
         };
 
-        _appIconsPanel = new StackPanel
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 12, 0, 8)
-        };
+        // App icons area
+        _appIconsPanel = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 12, 0, 8) };
 
-        var scrollViewer = new ScrollViewer
-        {
-            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
-            Content = _appIconsPanel
-        };
+        // Window list panel (for fast scroll mode, hidden by default)
+        _windowListPanel = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(4, 12, 4, 8), Visibility = Visibility.Collapsed };
+
+        var scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Hidden };
+        var scrollContent = new Grid();
+        scrollContent.Children.Add(_appIconsPanel);
+        scrollContent.Children.Add(_windowListPanel);
+        scrollViewer.Content = scrollContent;
 
         _rootGrid = new Grid();
         _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(7, GridUnitType.Star) });
@@ -144,7 +174,7 @@ public sealed class MainWindow : Window
         Grid.SetRow(scrollViewer, 0);
         Grid.SetRow(bottomPanel, 1);
 
-        var rootBorder = new Border
+        _rootBorder = new Border
         {
             Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0x1E, 0x1E, 0x2E)),
             CornerRadius = new CornerRadius(20),
@@ -152,7 +182,7 @@ public sealed class MainWindow : Window
             Child = _rootGrid
         };
 
-        Content = rootBorder;
+        Content = _rootBorder;
     }
 
     private void SetupWindow()
@@ -162,10 +192,13 @@ public sealed class MainWindow : Window
         Title = "ScrollBar OS";
         ExtendsContentIntoTitleBar = true;
 
+        // Remove window border/titlebar - make it a pure capsule shape
+        Win32Helper.RemoveWindowBorder(_hwnd);
+
         // Set window style: topmost + tool window (no taskbar entry)
         Win32Helper.SetWindowStyle(_hwnd, isTopmost: true, isToolWindow: true);
 
-        // Position the window as a capsule at the screen edge
+        // Position the window as a capsule at the screen edge (DPI-aware)
         PositionCapsuleWindow();
 
         // Add scroll handling
@@ -184,14 +217,17 @@ public sealed class MainWindow : Window
     }
 
     /// <summary>
-    /// Positions the window as a small capsule at the right/left edge of the screen
+    /// Positions the window as a small capsule at the right/left edge of the screen (DPI-aware)
     /// </summary>
     private void PositionCapsuleWindow()
     {
         var config = _configService.Config;
         var workArea = Win32Helper.GetPrimaryMonitorWorkArea();
 
-        int capsuleWidth = config.CapsuleWidth + 16; // padding
+        // Get DPI scale factor for proper high-DPI adaptation
+        double dpiScale = DpiHelper.GetScaleFactor(_hwnd);
+
+        int capsuleWidth = (int)((config.CapsuleWidth + 16) * dpiScale); // padding, DPI-scaled
         int capsuleHeight = (int)(workArea.Height * config.CapsuleHeightPercent);
         int x, y;
 
@@ -214,47 +250,81 @@ public sealed class MainWindow : Window
 
     private void RefreshWindowList()
     {
-        var windows = _windowService.GetVisibleWindows(true);
+        _currentWindows = _windowService.GetVisibleWindows(true);
         _appIconsPanel.Children.Clear();
 
-        foreach (var window in windows)
+        foreach (var window in _currentWindows)
         {
             var button = new Button
             {
-                Width = 44,
-                Height = 44,
-                Padding = new Thickness(4),
+                Width = 44, Height = 44, Padding = new Thickness(4),
                 Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
                 CornerRadius = new CornerRadius(8),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Tag = window
+                Tag = window,
+                RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
+                RenderTransform = new ScaleTransform { ScaleX = 1.0, ScaleY = 1.0 }
             };
 
             if (window.Icon != null)
             {
-                button.Content = new Image
-                {
-                    Source = window.Icon,
-                    Width = 32,
-                    Height = 32
-                };
+                button.Content = new Image { Source = window.Icon, Width = 32, Height = 32 };
             }
             else
             {
-                button.Content = new FontIcon
-                {
-                    Glyph = "\uE737", // App icon glyph
-                    FontSize = 18,
-                    Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF))
-                };
+                button.Content = new FontIcon { Glyph = "\uE737", FontSize = 18, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF)) };
             }
 
+            // Click: toggle focus/minimize
             button.Click += (s, e) =>
             {
                 if (s is Button btn && btn.Tag is WindowInfo wi)
                 {
-                    _windowService.FocusWindow(wi);
+                    var foreground = _windowService.GetForegroundWindow();
+                    if (foreground != null && foreground.Handle == wi.Handle)
+                    {
+                        // Already focused -> minimize
+                        Win32Helper.MinimizeWindow(wi.Handle);
+                    }
+                    else
+                    {
+                        _windowService.FocusWindow(wi);
+                    }
                 }
+            };
+
+            // Right-click: context menu with Close option
+            var flyout = new MenuFlyout();
+            var closeItem = new MenuFlyoutItem { Text = "Close", Tag = window };
+            closeItem.Click += (s, e) =>
+            {
+                if (s is MenuFlyoutItem item && item.Tag is WindowInfo wi)
+                {
+                    Win32Helper.CloseWindow(wi.Handle);
+                }
+            };
+            var minimizeItem = new MenuFlyoutItem { Text = "Minimize", Tag = window };
+            minimizeItem.Click += (s, e) =>
+            {
+                if (s is MenuFlyoutItem item && item.Tag is WindowInfo wi)
+                {
+                    Win32Helper.MinimizeWindow(wi.Handle);
+                }
+            };
+            flyout.Items.Add(minimizeItem);
+            flyout.Items.Add(closeItem);
+            button.ContextFlyout = flyout;
+
+            // Hover animation: scale up
+            button.PointerEntered += (s, e) =>
+            {
+                if (s is Button btn && btn.RenderTransform is ScaleTransform st)
+                { st.ScaleX = 1.15; st.ScaleY = 1.15; }
+            };
+            button.PointerExited += (s, e) =>
+            {
+                if (s is Button btn && btn.RenderTransform is ScaleTransform st)
+                { st.ScaleX = 1.0; st.ScaleY = 1.0; }
             };
 
             ToolTipService.SetToolTip(button, window.Title);
@@ -268,6 +338,8 @@ public sealed class MainWindow : Window
         {
             _cpuText.Text = $"CPU: {info.CpuUsage:F0}%";
             _memText.Text = $"RAM: {info.MemoryUsage:F0}%";
+            _diskText.Text = $"Disk: {info.DiskUsage:F0}%";
+            _netText.Text = $"\u2191{info.NetworkUploadKBps:F0} \u2193{info.NetworkDownloadKBps:F0} KB/s";
         });
     }
 
@@ -291,15 +363,88 @@ public sealed class MainWindow : Window
                 _configService.Save();
             });
         };
+        _notifyIcon.OnUndoTiling += () =>
+        {
+            DispatcherQueue.TryEnqueue(() => _tilingService.UndoLastTiling());
+        };
         _notifyIcon.Create();
+
+        // Register global hotkeys on the message window
+        _notifyIcon.RegisterHotKey(HotkeyService.MOD_WIN, 0x54); // Win+T = toggle taskbar
+        _notifyIcon.RegisterHotKey(HotkeyService.MOD_CONTROL, 0x5A); // Ctrl+Z = undo tiling
     }
 
     private void ScrollStateMachine_ModeChanged(object? sender, ScrollModeChangedEventArgs e)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            // Visual feedback on mode change could go here
+            if (e.NewMode == ScrollMode.FastScroll)
+            {
+                // Switch to list mode
+                _isListMode = true;
+                _appIconsPanel.Visibility = Visibility.Collapsed;
+                _windowListPanel.Visibility = Visibility.Visible;
+                RebuildWindowList();
+            }
+            else if (e.NewMode == ScrollMode.Idle && _isListMode)
+            {
+                // Exit list mode
+                _isListMode = false;
+                _windowListPanel.Visibility = Visibility.Collapsed;
+                _appIconsPanel.Visibility = Visibility.Visible;
+            }
         });
+    }
+
+    private void ScrollStateMachine_WindowFocused(object? sender, WindowFocusedEventArgs e)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_isListMode)
+            {
+                _listSelectedIndex = e.Index;
+                UpdateListHighlights();
+            }
+        });
+    }
+
+    private void RebuildWindowList()
+    {
+        _windowListPanel.Children.Clear();
+        _listSelectedIndex = _scrollStateMachine.CurrentFocusIndex;
+
+        for (int i = 0; i < _currentWindows.Count; i++)
+        {
+            var tb = new TextBlock
+            {
+                Text = _currentWindows[i].Title,
+                FontSize = 11,
+                Padding = new Thickness(6, 4, 6, 4),
+                Foreground = new SolidColorBrush(i == _listSelectedIndex
+                    ? Windows.UI.Color.FromArgb(0xFF, 0x4C, 0xC2, 0xFF)
+                    : Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF)),
+                Background = new SolidColorBrush(i == _listSelectedIndex
+                    ? Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)
+                    : Microsoft.UI.Colors.Transparent)
+            };
+            _windowListPanel.Children.Add(tb);
+        }
+    }
+
+    private void UpdateListHighlights()
+    {
+        for (int i = 0; i < _windowListPanel.Children.Count; i++)
+        {
+            if (_windowListPanel.Children[i] is TextBlock tb)
+            {
+                tb.Foreground = new SolidColorBrush(i == _listSelectedIndex
+                    ? Windows.UI.Color.FromArgb(0xFF, 0x4C, 0xC2, 0xFF)
+                    : Windows.UI.Color.FromArgb(0xDD, 0xFF, 0xFF, 0xFF));
+                tb.Background = new SolidColorBrush(i == _listSelectedIndex
+                    ? Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)
+                    : Microsoft.UI.Colors.Transparent);
+            }
+        }
     }
 
     private void ApplyConfiguration()
@@ -310,6 +455,26 @@ public sealed class MainWindow : Window
         {
             _taskbarService.Hide();
         }
+        else
+        {
+            _taskbarService.Restore();
+        }
+
+        // Widget visibility
+        _cpuText.Visibility = config.ShowHardwareWidget ? Visibility.Visible : Visibility.Collapsed;
+        _memText.Visibility = config.ShowHardwareWidget ? Visibility.Visible : Visibility.Collapsed;
+        _diskText.Visibility = config.ShowHardwareWidget ? Visibility.Visible : Visibility.Collapsed;
+        _netText.Visibility = config.ShowHardwareWidget ? Visibility.Visible : Visibility.Collapsed;
+        _dateTimeText.Visibility = config.ShowDateTimeWidget ? Visibility.Visible : Visibility.Collapsed;
+
+        // Background color/opacity
+        try
+        {
+            byte alpha = (byte)(config.BackgroundOpacity * 255);
+            var bgColor = Windows.UI.Color.FromArgb(alpha, 0x1E, 0x1E, 0x2E);
+            _rootBorder.Background = new SolidColorBrush(bgColor);
+        }
+        catch { }
     }
 
     private void OnConfigChanged(object? sender, EventArgs e)
@@ -326,6 +491,26 @@ public sealed class MainWindow : Window
         OpenSettings();
     }
 
+    private void TilingButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentWindows.Count > 0)
+        {
+            _tilingService.TileWindows(_currentWindows);
+        }
+    }
+
+    private void PinnedApp_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is int index)
+        {
+            var pinnedApps = _trayService.PinnedApps;
+            if (index < pinnedApps.Count)
+            {
+                _trayService.LaunchPinnedApp(pinnedApps[index]);
+            }
+        }
+    }
+
     private void OpenSettings()
     {
         var settingsWindow = new SettingsWindow();
@@ -335,6 +520,7 @@ public sealed class MainWindow : Window
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
         _refreshTimer?.Stop();
+        _dateTimeTimer?.Stop();
         _notifyIcon?.Dispose();
         _hardwareMonitor.Stop();
         _taskbarService.Restore();
@@ -363,6 +549,7 @@ public class NotifyIconHelper : IDisposable
     public event Action? OnShowSettings;
     public event Action? OnExit;
     public event Action? OnToggleTaskbar;
+    public event Action? OnUndoTiling;
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct NOTIFYICONDATA
@@ -408,7 +595,19 @@ public class NotifyIconHelper : IDisposable
     private const uint WM_LBUTTONUP = 0x0202;
     private const uint WM_RBUTTONUP = 0x0205;
     private const uint WM_DESTROY = 0x0002;
+    private const uint WM_HOTKEY = 0x0312;
     private const nint HWND_MESSAGE = -3;
+
+    // Context menu IDs
+    private const int IDM_SETTINGS = 40001;
+    private const int IDM_TOGGLE_TASKBAR = 40002;
+    private const int IDM_UNDO_TILING = 40003;
+    private const int IDM_EXIT = 40004;
+    private const uint TPM_RIGHTALIGN = 0x0008;
+    private const uint TPM_BOTTOMALIGN = 0x0020;
+
+    private int _hotkeyId = 1;
+    private readonly Dictionary<int, Action> _hotkeys = new();
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern bool Shell_NotifyIcon(uint dwMessage, ref NOTIFYICONDATA lpData);
@@ -433,6 +632,42 @@ public class NotifyIconHelper : IDisposable
 
     [DllImport("user32.dll")]
     private static extern nint DefWindowProc(nint hWnd, uint Msg, nint wParam, nint lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool RegisterHotKey(nint hWnd, int id, uint fsModifiers, uint vk);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnregisterHotKey(nint hWnd, int id);
+
+    [DllImport("user32.dll")]
+    private static extern nint CreatePopupMenu();
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool AppendMenu(nint hMenu, uint uFlags, nint uIDNewItem, string lpNewItem);
+
+    [DllImport("user32.dll")]
+    private static extern int TrackPopupMenuEx(nint hMenu, uint uFlags, int x, int y, nint hWnd, nint tpmParams);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DestroyMenu(nint hMenu);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(nint hWnd);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT { public int X; public int Y; }
+
+    private const uint MF_STRING = 0x00000000;
+    private const uint WM_COMMAND = 0x0111;
 
     private delegate nint WndProcDelegate(nint hWnd, uint msg, nint wParam, nint lParam);
     private WndProcDelegate? _wndProcDelegate;
@@ -478,6 +713,23 @@ public class NotifyIconHelper : IDisposable
         Shell_NotifyIcon(NIM_ADD, ref nid);
     }
 
+    /// <summary>
+    /// Registers a global hotkey on the message window
+    /// </summary>
+    public void RegisterHotKey(int modifiers, int virtualKey)
+    {
+        if (_messageHwnd == nint.Zero) return;
+        int id = _hotkeyId++;
+        if (RegisterHotKey(_messageHwnd, id, (uint)modifiers, (uint)virtualKey))
+        {
+            // Map hotkey to action based on virtual key
+            if (virtualKey == 0x54) // T = toggle taskbar
+                _hotkeys[id] = () => OnToggleTaskbar?.Invoke();
+            else if (virtualKey == 0x5A) // Z = undo tiling
+                _hotkeys[id] = () => OnUndoTiling?.Invoke();
+        }
+    }
+
     private nint MessageWndProc(nint hWnd, uint msg, nint wParam, nint lParam)
     {
         if (msg == _callbackMessage)
@@ -489,7 +741,28 @@ public class NotifyIconHelper : IDisposable
             }
             else if (mouseMsg == WM_RBUTTONUP)
             {
-                OnToggleTaskbar?.Invoke();
+                ShowContextMenu();
+            }
+            return nint.Zero;
+        }
+
+        if (msg == WM_HOTKEY)
+        {
+            int id = (int)wParam;
+            if (_hotkeys.TryGetValue(id, out var action))
+                action();
+            return nint.Zero;
+        }
+
+        if (msg == WM_COMMAND)
+        {
+            int cmd = (int)(wParam.ToInt64() & 0xFFFF);
+            switch (cmd)
+            {
+                case IDM_SETTINGS: OnShowSettings?.Invoke(); break;
+                case IDM_TOGGLE_TASKBAR: OnToggleTaskbar?.Invoke(); break;
+                case IDM_UNDO_TILING: OnUndoTiling?.Invoke(); break;
+                case IDM_EXIT: OnExit?.Invoke(); break;
             }
             return nint.Zero;
         }
@@ -502,10 +775,28 @@ public class NotifyIconHelper : IDisposable
         return DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
+    private void ShowContextMenu()
+    {
+        GetCursorPos(out POINT pt);
+        nint menu = CreatePopupMenu();
+        AppendMenu(menu, MF_STRING, IDM_SETTINGS, "Settings");
+        AppendMenu(menu, MF_STRING, IDM_TOGGLE_TASKBAR, "Toggle Taskbar");
+        AppendMenu(menu, MF_STRING, IDM_UNDO_TILING, "Undo Tiling");
+        AppendMenu(menu, MF_STRING, IDM_EXIT, "Exit");
+        SetForegroundWindow(_messageHwnd);
+        TrackPopupMenuEx(menu, TPM_RIGHTALIGN | TPM_BOTTOMALIGN, pt.X, pt.Y, _messageHwnd, nint.Zero);
+        DestroyMenu(menu);
+    }
+
     public void Dispose()
     {
         if (_messageHwnd != nint.Zero)
         {
+            // Unregister hotkeys
+            foreach (var id in _hotkeys.Keys)
+                UnregisterHotKey(_messageHwnd, id);
+            _hotkeys.Clear();
+
             var nid = new NOTIFYICONDATA
             {
                 cbSize = Marshal.SizeOf<NOTIFYICONDATA>(),
