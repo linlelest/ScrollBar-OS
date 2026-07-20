@@ -41,7 +41,7 @@ public sealed partial class TilingGrid : UserControl
         TilingRoot.Visibility = Visibility.Visible;
 
         // Disable click-through
-        (App.MainWindow as MainWindow)?.DisableClickThrough();
+
     }
 
     /// <summary>
@@ -50,7 +50,7 @@ public sealed partial class TilingGrid : UserControl
     public void Hide()
     {
         TilingRoot.Visibility = Visibility.Collapsed;
-        (App.MainWindow as MainWindow)?.EnableClickThrough();
+
     }
 
     private void ApplyButton_Click(object sender, RoutedEventArgs e)

@@ -32,7 +32,7 @@ public sealed partial class TrayMenu : UserControl
         PinnedItemsRepeater.ItemsSource = trayService.PinnedApps;
 
         TrayMenuRoot.Visibility = Visibility.Visible;
-        (App.MainWindow as MainWindow)?.DisableClickThrough();
+
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public sealed partial class TrayMenu : UserControl
     public void Hide()
     {
         TrayMenuRoot.Visibility = Visibility.Collapsed;
-        (App.MainWindow as MainWindow)?.EnableClickThrough();
+
     }
 
     private void Backdrop_Tapped(object sender, TappedRoutedEventArgs e)

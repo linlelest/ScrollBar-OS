@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using ScrollBarOS.Models;
 using ScrollBarOS.Services;
-using ScrollBarOS.Helpers;
 using System.Collections.ObjectModel;
 
 namespace ScrollBarOS.Views;
@@ -100,20 +99,12 @@ public sealed partial class CapsuleControl : UserControl
     }
 
     /// <summary>
-    /// Updates capsule position based on configuration
+    /// Updates capsule position - window positioning is handled by MainWindow
     /// </summary>
     public void UpdatePosition(CapsulePosition position)
     {
-        if (position == CapsulePosition.Left)
-        {
-            CapsuleRoot.HorizontalAlignment = HorizontalAlignment.Left;
-            CapsuleRoot.Margin = new Thickness(8, 0, 0, 0);
-        }
-        else
-        {
-            CapsuleRoot.HorizontalAlignment = HorizontalAlignment.Right;
-            CapsuleRoot.Margin = new Thickness(0, 0, 8, 0);
-        }
+        // Window positioning is managed by MainWindow.PositionCapsuleWindow()
+        // No internal layout change needed
     }
 
     /// <summary>
@@ -121,7 +112,6 @@ public sealed partial class CapsuleControl : UserControl
     /// </summary>
     public void UpdateAppearance(AppConfig config)
     {
-        CapsuleRoot.Width = config.CapsuleWidth;
         CapsuleRoot.CornerRadius = new CornerRadius(config.CornerRadius);
 
         // Parse background color
@@ -152,14 +142,15 @@ public sealed partial class CapsuleControl : UserControl
     }
 
     /// <summary>
-    /// Sets capsule height to configured percentage of screen height (default 33%)
+    /// Capsule fills the window - height is managed by MainWindow positioning
     /// </summary>
     private void UpdateCapsuleHeight()
     {
-        var workArea = Win32Helper.GetPrimaryMonitorWorkArea();
-        var config = _configService.Config;
-        double screenHeight = workArea.Height;
-        CapsuleRoot.Height = screenHeight * config.CapsuleHeightPercent;
+        // Window is already sized to capsule dimensions by MainWindow
+        // Capsule fills the entire window
+        CapsuleRoot.VerticalAlignment = VerticalAlignment.Stretch;
+        CapsuleRoot.HorizontalAlignment = HorizontalAlignment.Stretch;
+        CapsuleRoot.Margin = new Thickness(0);
     }
 
     private void UpdateDateTime()
@@ -180,10 +171,7 @@ public sealed partial class CapsuleControl : UserControl
 
     private void CapsuleRoot_PointerEntered(object sender, PointerRoutedEventArgs e)
     {
-        // Disable click-through when hovering over capsule
-        (App.MainWindow as MainWindow)?.DisableClickThrough();
-
-        // Animate capsule width
+        // Animate capsule width on hover
         var animation = new DoubleAnimation
         {
             To = _configService.Config.CapsuleWidth + 8,
@@ -199,10 +187,7 @@ public sealed partial class CapsuleControl : UserControl
 
     private void CapsuleRoot_PointerExited(object sender, PointerRoutedEventArgs e)
     {
-        // Re-enable click-through
-        (App.MainWindow as MainWindow)?.EnableClickThrough();
-
-        // Animate back
+        // Animate back to normal width
         var animation = new DoubleAnimation
         {
             To = _configService.Config.CapsuleWidth,
@@ -327,7 +312,15 @@ public sealed partial class CapsuleControl : UserControl
 
     private void TilingMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        (App.MainWindow as MainWindow)?.ShowTilingGrid();
+        var mainWindow = App.MainWindow as MainWindow;
+        if (mainWindow != null && _windowService != null)
+        {
+            var windows = _windowService.GetVisibleWindows(true);
+            if (windows.Count > 0)
+            {
+                mainWindow.TilingServiceInstance.TileWindows(windows);
+            }
+        }
     }
 
     private void ExitMenuItem_Click(object sender, RoutedEventArgs e)

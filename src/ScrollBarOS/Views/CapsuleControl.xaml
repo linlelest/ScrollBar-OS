@@ -8,12 +8,8 @@
     mc:Ignorable="d">
 
     <Grid x:Name="CapsuleRoot" 
-          Width="64" 
           CornerRadius="20"
           Background="#CC1E1E2E"
-          VerticalAlignment="Center"
-          HorizontalAlignment="Right"
-          Margin="0,0,8,0"
           PointerEntered="CapsuleRoot_PointerEntered"
           PointerExited="CapsuleRoot_PointerExited"
           PointerWheelChanged="CapsuleRoot_PointerWheelChanged">

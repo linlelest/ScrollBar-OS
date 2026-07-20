@@ -8,17 +8,5 @@
     <Grid x:Name="RootGrid" Background="Transparent">
         <!-- Capsule Control -->
         <views:CapsuleControl x:Name="Capsule" />
-
-        <!-- Tiling Grid Overlay (manages own visibility) -->
-        <views:TilingGrid x:Name="TilingGridOverlay" />
-
-        <!-- Window List Overlay for fast scroll (manages own visibility) -->
-        <views:WindowListOverlay x:Name="WindowListOverlay" />
-
-        <!-- Settings Panel (manages own visibility) -->
-        <views:SettingsPanel x:Name="SettingsPanel" />
-
-        <!-- Tray Menu (manages own visibility) -->
-        <views:TrayMenu x:Name="TrayMenu" />
     </Grid>
 </Window>

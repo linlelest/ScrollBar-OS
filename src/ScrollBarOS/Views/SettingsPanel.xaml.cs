@@ -70,7 +70,7 @@ public sealed partial class SettingsPanel : UserControl
     public void Show()
     {
         SettingsRoot.Visibility = Visibility.Visible;
-        (App.MainWindow as MainWindow)?.DisableClickThrough();
+
 
         // Slide in animation
         var animation = new DoubleAnimation
@@ -96,7 +96,7 @@ public sealed partial class SettingsPanel : UserControl
     public void Hide()
     {
         SettingsRoot.Visibility = Visibility.Collapsed;
-        (App.MainWindow as MainWindow)?.EnableClickThrough();
+
     }
 
     #region Event Handlers

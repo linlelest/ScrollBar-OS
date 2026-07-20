@@ -41,7 +41,7 @@ public sealed partial class WindowListOverlay : UserControl
         }
 
         OverlayRoot.Visibility = Visibility.Visible;
-        (App.MainWindow as MainWindow)?.DisableClickThrough();
+
     }
 
     /// <summary>
@@ -50,7 +50,7 @@ public sealed partial class WindowListOverlay : UserControl
     public void Hide()
     {
         OverlayRoot.Visibility = Visibility.Collapsed;
-        (App.MainWindow as MainWindow)?.EnableClickThrough();
+
     }
 
     /// <summary>
