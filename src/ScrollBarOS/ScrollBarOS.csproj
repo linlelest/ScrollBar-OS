@@ -41,18 +41,4 @@
 		<Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<Page Include="SettingsWindow.xaml" />
-		<Page Include="TilingWindow.xaml" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="SettingsWindow.xaml">
-			<Generator>MSBuild:Compile</Generator>
-		</None>
-		<None Update="TilingWindow.xaml">
-			<Generator>MSBuild:Compile</Generator>
-		</None>
-	</ItemGroup>
-
 </Project>
