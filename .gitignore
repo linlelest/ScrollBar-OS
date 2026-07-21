@@ -72,3 +72,4 @@ publish/
 # Temporary files
 *.tmp
 *.temp
+/src/ScrollBarOS/Properties/PublishProfiles/FolderProfile.pubxml
