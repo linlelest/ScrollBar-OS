@@ -1,59 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>ScrollBarOS</RootNamespace>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Platforms>x64;ARM64</Platforms>
-    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
-    <UseWinUI>true</UseWinUI>
-    <WindowsPackageType>None</WindowsPackageType>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>12</LangVersion>
-    <SelfContained>true</SelfContained>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <PublishTrimmed>false</PublishTrimmed>
-    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    <AssemblyName>ScrollBarOS</AssemblyName>
-    <Version>1.0.0</Version>
-    <Authors>ScrollBar-OS Team</Authors>
-    <Description>A lightweight Windows desktop enhancement tool with capsule-style UI</Description>
-    <NoWarn>$(NoWarn);CS8305;CS0067;CS0169</NoWarn>
-    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
-  </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="System.Drawing.Common" Version="8.0.11" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.1" />
-  </ItemGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+		<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+		<RootNamespace>ScrollBarOS</RootNamespace>
+		<AssemblyName>ScrollBarOS</AssemblyName>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
 
-  <ItemGroup>
-    <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
+		<Platforms>x64;ARM64</Platforms>
+		<RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
 
-  <ItemGroup>
-    <Page Remove="MainWindow.xaml" />
-    <Page Remove="TilingWindow.xaml" />
-  </ItemGroup>
+		<UseWinUI>true</UseWinUI>
+		<WindowsPackageType>None</WindowsPackageType>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>12</LangVersion>
 
-  <ItemGroup>
-    <None Update="MainWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="TilingWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-  </ItemGroup>
+		<SelfContained>true</SelfContained>
+		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		<PublishTrimmed>false</PublishTrimmed>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 
-  <!-- SidePanelWindow.xaml is included implicitly by the SDK's default Page items -->
-  <ItemGroup>
-    <Page Include="MainWindow.xaml" />
-  </ItemGroup>
+		<Version>1.0.0</Version>
+		<Authors>ScrollBar-OS Team</Authors>
+		<Description>A lightweight Windows desktop enhancement tool with capsule-style UI</Description>
+		<NoWarn>$(NoWarn);CS8305;CS0067;CS0169</NoWarn>
+	</PropertyGroup>
 
+	<ItemGroup>
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
+		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<PackageReference Include="System.Drawing.Common" Version="8.0.11" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 
 </Project>
