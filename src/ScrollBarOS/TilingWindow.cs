@@ -15,21 +15,20 @@ namespace ScrollBarOS;
 /// Shows a grid preview of selected windows, supports drag-in from capsule,
 /// per-item delete, and a confirm button to execute the tiling layout.
 /// </summary>
-public class TilingWindow : Window
+public partial class TilingWindow : Window
 {
     private readonly WindowService _windowService;
     private readonly TilingService _tilingService;
     private nint _hwnd;
 
     private readonly ObservableCollection<WindowInfo> _selectedWindows = new();
-    private UniformGridLayout? _gridLayout;
-    private ItemsRepeater? _itemsRepeater;
-    private TextBlock? _countText;
 
     public TilingWindow(WindowService windowService, TilingService tilingService)
     {
         _windowService = windowService;
         _tilingService = tilingService;
+
+        InitializeComponent();
 
         Title = "Window Tiling";
 
@@ -44,7 +43,7 @@ public class TilingWindow : Window
         int y = workArea.Y + (workArea.Height - h) / 2;
         appWindow.MoveAndResize(new RectInt32(x, y, w, h));
 
-        Content = BuildUI();
+        InitializeControls();
 
         // Pre-populate with currently visible windows
         foreach (var win in _windowService.GetVisibleWindows(true))
@@ -57,96 +56,19 @@ public class TilingWindow : Window
         AllowDropThrough();
     }
 
-    private UIElement BuildUI()
+    private void InitializeControls()
     {
-        var rootBorder = new Border
-        {
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xF5, 0x1A, 0x1A, 0x28)),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(20)
-        };
+        // Set up ItemsRepeater with data source and template
+        ItemsRepeater.ItemsSource = _selectedWindows;
+        ItemsRepeater.ItemTemplate = new WindowTileFactory(this);
 
-        var rootGrid = new Grid();
-        rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        // Set up drag and drop
+        ScrollViewer.AllowDrop = true;
+        ScrollViewer.DragOver += (s, e) => { e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy; };
+        ScrollViewer.Drop += ScrollArea_Drop;
 
-        // Header
-        var headerPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 14) };
-        headerPanel.Children.Add(new TextBlock
-        {
-            Text = "Window Tiling",
-            FontSize = 18,
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF)),
-            VerticalAlignment = VerticalAlignment.Center
-        });
-        _countText = new TextBlock
-        {
-            Text = "",
-            FontSize = 12,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF)),
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0, 0, 0)
-        };
-        headerPanel.Children.Add(_countText);
-        rootGrid.Children.Add(headerPanel);
-
-        // Grid preview area
-        _gridLayout = new UniformGridLayout
-        {
-            MinItemWidth = 140,
-            MinItemHeight = 100,
-            MinColumnSpacing = 10,
-            MinRowSpacing = 10,
-            ItemsStretch = UniformGridLayoutItemsStretch.Fill
-        };
-
-        _itemsRepeater = new ItemsRepeater
-        {
-            Layout = _gridLayout,
-            ItemsSource = _selectedWindows
-        };
-        _itemsRepeater.ItemTemplate = new WindowTileFactory(this);
-
-        var scrollArea = new ScrollViewer
-        {
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = _itemsRepeater,
-            AllowDrop = true
-        };
-        scrollArea.DragOver += (s, e) => { e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy; };
-        scrollArea.Drop += ScrollArea_Drop;
-        Grid.SetRow(scrollArea, 1);
-        rootGrid.Children.Add(scrollArea);
-
-        // Bottom bar: hint + confirm button
-        var bottomBar = new Grid { Margin = new Thickness(0, 14, 0, 0) };
-        bottomBar.Children.Add(new TextBlock
-        {
-            Text = "Drag app icons here, then confirm to tile.",
-            FontSize = 11,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x77, 0xFF, 0xFF, 0xFF)),
-            VerticalAlignment = VerticalAlignment.Center
-        });
-
-        var confirmBtn = new Button
-        {
-            Content = "Confirm Tiling",
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x4C, 0xC2, 0xFF)),
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF)),
-            Padding = new Thickness(18, 8, 18, 8),
-            CornerRadius = new CornerRadius(6),
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
-        };
-        confirmBtn.Click += ConfirmBtn_Click;
-        bottomBar.Children.Add(confirmBtn);
-        Grid.SetRow(bottomBar, 2);
-        rootGrid.Children.Add(bottomBar);
-
-        rootBorder.Child = rootGrid;
-        return rootBorder;
+        // Set up confirm button
+        ConfirmButton.Click += ConfirmBtn_Click;
     }
 
     private void AllowDropThrough()
@@ -189,10 +111,7 @@ public class TilingWindow : Window
 
     private void UpdateCount()
     {
-        if (_countText != null)
-        {
-            _countText.Text = $"{_selectedWindows.Count} window(s) selected";
-        }
+        CountText.Text = $"{_selectedWindows.Count} window(s) selected";
     }
 
     private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
@@ -307,4 +226,3 @@ internal class WindowTileFactory : IElementFactory
         // No recycling needed for this simple factory
     }
 }
-

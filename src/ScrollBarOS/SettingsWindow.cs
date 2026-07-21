@@ -9,9 +9,9 @@ using Windows.Graphics;
 namespace ScrollBarOS;
 
 /// <summary>
-/// Settings window that opens as a separate window (pure code UI, no XAML)
+/// Settings window that opens as a separate window
 /// </summary>
-public class SettingsWindow : Window
+public partial class SettingsWindow : Window
 {
     private readonly ConfigService _configService;
     private readonly TaskbarService _taskbarService;
@@ -21,6 +21,8 @@ public class SettingsWindow : Window
         _configService = ConfigService.Instance;
         _taskbarService = new TaskbarService();
 
+        InitializeComponent();
+
         Title = "ScrollBar OS - Settings";
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -28,126 +30,77 @@ public class SettingsWindow : Window
             Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd));
         appWindow.Resize(new SizeInt32(380, 620));
 
-        Content = CreateSettingsUI();
+        InitializeControls();
 
         App.WriteLog("SettingsWindow created successfully");
     }
 
-    private UIElement CreateSettingsUI()
+    private void InitializeControls()
     {
         var config = _configService.Config;
 
-        var scrollViewer = new ScrollViewer
+        // Initialize position combo box
+        PositionComboBox.SelectedIndex = config.CapsulePosition == CapsulePosition.Left ? 0 : 1;
+        PositionComboBox.SelectionChanged += (s, e) =>
         {
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
-        };
-
-        var panel = new StackPanel { Margin = new Thickness(20) };
-
-        panel.Children.Add(new TextBlock
-        {
-            Text = "Settings",
-            FontSize = 22,
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Margin = new Thickness(0, 0, 0, 16)
-        });
-
-        panel.Children.Add(CreateSectionTitle("Capsule Position"));
-        var positionCombo = CreateComboBox("Left", "Right");
-        positionCombo.SelectedIndex = config.CapsulePosition == CapsulePosition.Left ? 0 : 1;
-        positionCombo.SelectionChanged += (s, e) =>
-        {
-            var pos = positionCombo.SelectedIndex == 0 ? CapsulePosition.Left : CapsulePosition.Right;
+            var pos = PositionComboBox.SelectedIndex == 0 ? CapsulePosition.Left : CapsulePosition.Right;
             _configService.Update(c => c.CapsulePosition = pos);
         };
-        panel.Children.Add(positionCombo);
 
-        panel.Children.Add(CreateSectionTitle("Background Material"));
-        var materialCombo = CreateComboBox("Solid", "Acrylic", "Mica");
-        materialCombo.SelectedIndex = (int)config.Material;
-        materialCombo.SelectionChanged += (s, e) =>
+        // Initialize material combo box
+        MaterialComboBox.SelectedIndex = (int)config.Material;
+        MaterialComboBox.SelectionChanged += (s, e) =>
         {
-            _configService.Update(c => c.Material = (BackgroundMaterial)materialCombo.SelectedIndex);
+            _configService.Update(c => c.Material = (BackgroundMaterial)MaterialComboBox.SelectedIndex);
         };
-        panel.Children.Add(materialCombo);
 
-        panel.Children.Add(CreateSectionTitle($"Opacity: {config.BackgroundOpacity:P0}"));
-        var opacitySlider = CreateSlider(config.BackgroundOpacity * 100, 20, 100, 5);
-        opacitySlider.ValueChanged += (s, e) => _configService.Update(c => c.BackgroundOpacity = e.NewValue / 100.0);
-        panel.Children.Add(opacitySlider);
-
-        panel.Children.Add(CreateSectionTitle($"Capsule Width: {config.CapsuleWidth}px"));
-        var widthSlider = CreateSlider(config.CapsuleWidth, 48, 96, 4);
-        widthSlider.ValueChanged += (s, e) => _configService.Update(c => c.CapsuleWidth = (int)e.NewValue);
-        panel.Children.Add(widthSlider);
-
-        panel.Children.Add(CreateSectionTitle($"Icon Size: {config.IconSize}px"));
-        var iconSlider = CreateSlider(config.IconSize, 24, 48, 4);
-        iconSlider.ValueChanged += (s, e) => _configService.Update(c => c.IconSize = (int)e.NewValue);
-        panel.Children.Add(iconSlider);
-
-        panel.Children.Add(CreateSectionTitle("Widgets"));
-        var hwToggle = CreateToggle("Hardware Monitor", config.ShowHardwareWidget);
-        hwToggle.Toggled += (s, e) => _configService.Update(c => c.ShowHardwareWidget = hwToggle.IsOn);
-        panel.Children.Add(hwToggle);
-
-        var dtToggle = CreateToggle("Date & Time", config.ShowDateTimeWidget, 16);
-        dtToggle.Toggled += (s, e) => _configService.Update(c => c.ShowDateTimeWidget = dtToggle.IsOn);
-        panel.Children.Add(dtToggle);
-
-        panel.Children.Add(CreateSectionTitle("System"));
-        var taskbarToggle = CreateToggle("Hide Taskbar", config.HideTaskbar);
-        taskbarToggle.Toggled += (s, e) =>
+        // Initialize opacity slider
+        OpacitySlider.Value = config.BackgroundOpacity * 100;
+        OpacityLabel.Text = $"Opacity: {config.BackgroundOpacity:P0}";
+        OpacitySlider.ValueChanged += (s, e) =>
         {
-            _configService.Update(c => c.HideTaskbar = taskbarToggle.IsOn);
-            //if (taskbarToggle.IsOn) _taskbarService.Hide();
-            //else _taskbarService.Restore();
+            _configService.Update(c => c.BackgroundOpacity = e.NewValue / 100.0);
+            OpacityLabel.Text = $"Opacity: {e.NewValue / 100.0:P0}";
         };
-        panel.Children.Add(taskbarToggle);
 
-        var startupToggle = CreateToggle("Start with Windows", config.StartWithWindows, 16);
-        startupToggle.Toggled += (s, e) =>
+        // Initialize width slider
+        WidthSlider.Value = config.CapsuleWidth;
+        WidthLabel.Text = $"Capsule Width: {config.CapsuleWidth}px";
+        WidthSlider.ValueChanged += (s, e) =>
         {
-            _configService.Update(c => c.StartWithWindows = startupToggle.IsOn);
-            SetStartup(startupToggle.IsOn);
+            _configService.Update(c => c.CapsuleWidth = (int)e.NewValue);
+            WidthLabel.Text = $"Capsule Width: {(int)e.NewValue}px";
         };
-        panel.Children.Add(startupToggle);
 
-        panel.Children.Add(new TextBlock
+        // Initialize icon size slider
+        IconSizeSlider.Value = config.IconSize;
+        IconSizeLabel.Text = $"Icon Size: {config.IconSize}px";
+        IconSizeSlider.ValueChanged += (s, e) =>
         {
-            Text = "ScrollBar OS v1.0.0",
-            FontSize = 11,
-            Opacity = 0.5,
-            Margin = new Thickness(0, 16, 0, 0)
-        });
+            _configService.Update(c => c.IconSize = (int)e.NewValue);
+            IconSizeLabel.Text = $"Icon Size: {(int)e.NewValue}px";
+        };
 
-        scrollViewer.Content = panel;
-        return scrollViewer;
-    }
+        // Initialize widget toggles
+        HardwareWidgetToggle.IsOn = config.ShowHardwareWidget;
+        HardwareWidgetToggle.Toggled += (s, e) => _configService.Update(c => c.ShowHardwareWidget = HardwareWidgetToggle.IsOn);
 
-    private static TextBlock CreateSectionTitle(string text)
-    {
-        return new TextBlock { Text = text, FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) };
-    }
+        DateTimeWidgetToggle.IsOn = config.ShowDateTimeWidget;
+        DateTimeWidgetToggle.Toggled += (s, e) => _configService.Update(c => c.ShowDateTimeWidget = DateTimeWidgetToggle.IsOn);
 
-    private static ComboBox CreateComboBox(params string[] items)
-    {
-        var combo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 16) };
-        foreach (var item in items)
+        // Initialize system toggles
+        HideTaskbarToggle.IsOn = config.HideTaskbar;
+        HideTaskbarToggle.Toggled += (s, e) =>
         {
-            combo.Items.Add(new ComboBoxItem { Content = item });
-        }
-        return combo;
-    }
+            _configService.Update(c => c.HideTaskbar = HideTaskbarToggle.IsOn);
+        };
 
-    private static Slider CreateSlider(double value, double minimum, double maximum, double step)
-    {
-        return new Slider { Minimum = minimum, Maximum = maximum, Value = value, StepFrequency = step, Margin = new Thickness(0, 0, 0, 16) };
-    }
-
-    private static ToggleSwitch CreateToggle(string header, bool isOn, int bottomMargin = 8)
-    {
-        return new ToggleSwitch { Header = header, IsOn = isOn, Margin = new Thickness(0, 0, 0, bottomMargin) };
+        StartupToggle.IsOn = config.StartWithWindows;
+        StartupToggle.Toggled += (s, e) =>
+        {
+            _configService.Update(c => c.StartWithWindows = StartupToggle.IsOn);
+            SetStartup(StartupToggle.IsOn);
+        };
     }
 
     private void SetStartup(bool enable)
@@ -173,4 +126,3 @@ public class SettingsWindow : Window
         catch { }
     }
 }
-
