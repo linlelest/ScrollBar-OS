@@ -1,7 +1,9 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.Win32;
+using ScrollBarOS.Helpers;
 using ScrollBarOS.Models;
 using ScrollBarOS.Services;
 using Windows.Graphics;
@@ -26,13 +28,56 @@ public partial class SettingsWindow : Window
         Title = "ScrollBar OS - Settings";
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        
+        // Get DPI scale factor for proper high-DPI adaptation
+        double dpiScale = DpiHelper.GetScaleFactor(hwnd);
+        
+        // Calculate DPI-scaled window size
+        int baseWidth = 380;
+        int baseHeight = 620;
+        int scaledWidth = DpiHelper.Scale(baseWidth, dpiScale);
+        int scaledHeight = DpiHelper.Scale(baseHeight, dpiScale);
+        
         var appWindow = AppWindow.GetFromWindowId(
             Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd));
-        appWindow.Resize(new SizeInt32(380, 620));
+        appWindow.Resize(new SizeInt32(scaledWidth, scaledHeight));
+
+        // Subscribe to DPI changes
+        this.Activated += OnWindowActivated;
+        this.SizeChanged += OnWindowSizeChanged;
 
         InitializeControls();
 
-        App.WriteLog("SettingsWindow created successfully");
+        App.WriteLog("SettingsWindow created successfully with DPI scaling factor: " + dpiScale);
+    }
+
+    private void OnWindowActivated(object sender, WindowActivatedEventArgs e)
+    {
+        // Re-evaluate DPI when window is activated to handle DPI changes
+        UpdateWindowSizeForDPI();
+    }
+
+    private void OnWindowSizeChanged(object sender, WindowSizeChangedEventArgs e)
+    {
+        // Handle window size changes if needed
+    }
+
+    private void UpdateWindowSizeForDPI()
+    {
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        double dpiScale = DpiHelper.GetScaleFactor(hwnd);
+        
+        // Calculate DPI-scaled window size
+        int baseWidth = 380;
+        int baseHeight = 620;
+        int scaledWidth = DpiHelper.Scale(baseWidth, dpiScale);
+        int scaledHeight = DpiHelper.Scale(baseHeight, dpiScale);
+        
+        var appWindow = AppWindow.GetFromWindowId(
+            Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd));
+        appWindow.Resize(new SizeInt32(scaledWidth, scaledHeight));
+        
+        App.WriteLog("SettingsWindow DPI updated with scaling factor: " + dpiScale);
     }
 
     private void InitializeControls()
