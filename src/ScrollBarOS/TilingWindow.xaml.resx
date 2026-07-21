@@ -1,0 +1,12 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UniformGridLayout x:Key="GridLayout"
+                      MinItemWidth="140"
+                      MinItemHeight="100"
+                      MinColumnSpacing="10"
+                      MinRowSpacing="10"
+                      ItemsJustification="Center"
+                      ItemsAlignment="Center"/>
+
+</ResourceDictionary>
