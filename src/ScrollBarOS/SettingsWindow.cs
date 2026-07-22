@@ -51,13 +51,13 @@ public partial class SettingsWindow : Window
         App.WriteLog("SettingsWindow created successfully with DPI scaling factor: " + dpiScale);
     }
 
-    private void OnWindowActivated(object sender, WindowActivatedEventArgs e)
+    private void OnWindowActivated(object sender, object e)
     {
         // Re-evaluate DPI when window is activated to handle DPI changes
         UpdateWindowSizeForDPI();
     }
 
-    private void OnWindowSizeChanged(object sender, WindowSizeChangedEventArgs e)
+    private void OnWindowSizeChanged(object sender, object e)
     {
         // Handle window size changes if needed
     }

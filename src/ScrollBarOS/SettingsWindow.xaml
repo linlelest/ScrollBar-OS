@@ -9,66 +9,44 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20">
-            <StackPanel.Resources>
-                <!-- DPI-aware styles -->
-                <Style x:Key="DpiAwareTextBlock" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
-                    <Setter Property="FontSize" Value="14"/>
-                    <Setter Property="FontWeight" Value="SemiBold"/>
-                    <Setter Property="Margin" Value="0,0,0,8"/>
-                </Style>
-
-                <Style x:Key="DpiAwareComboBox" TargetType="ComboBox" BasedOn="{StaticResource DefaultComboBoxStyle}">
-                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                    <Setter Property="Margin" Value="0,0,0,16"/>
-                </Style>
-
-                <Style x:Key="DpiAwareSlider" TargetType="Slider" BasedOn="{StaticResource DefaultSliderStyle}">
-                    <Setter Property="Margin" Value="0,0,0,16"/>
-                </Style>
-
-                <Style x:Key="DpiAwareToggleSwitch" TargetType="ToggleSwitch" BasedOn="{StaticResource DefaultToggleSwitchStyle}">
-                    <Setter Property="Margin" Value="0,0,0,8"/>
-                </Style>
-
-            </StackPanel.Resources>
             <TextBlock Text="Settings" FontSize="22" FontWeight="Bold" Margin="0,0,0,16"/>
 
             <!-- Capsule Position -->
-            <TextBlock Text="Capsule Position" Style="{StaticResource DpiAwareTextBlock}" />
-            <ComboBox x:Name="PositionComboBox" Style="{StaticResource DpiAwareComboBox}">
+            <TextBlock Text="Capsule Position" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <ComboBox x:Name="PositionComboBox" HorizontalAlignment="Stretch" Margin="0,0,0,16">
                 <ComboBoxItem Content="Left" />
                 <ComboBoxItem Content="Right" />
             </ComboBox>
 
             <!-- Background Material -->
-            <TextBlock Text="Background Material" Style="{StaticResource DpiAwareTextBlock}" />
-            <ComboBox x:Name="MaterialComboBox" Style="{StaticResource DpiAwareComboBox}">
+            <TextBlock Text="Background Material" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <ComboBox x:Name="MaterialComboBox" HorizontalAlignment="Stretch" Margin="0,0,0,16">
                 <ComboBoxItem Content="Solid" />
                 <ComboBoxItem Content="Acrylic" />
                 <ComboBoxItem Content="Mica" />
             </ComboBox>
 
             <!-- Opacity -->
-            <TextBlock x:Name="OpacityLabel" Text="Opacity: 100%" Style="{StaticResource DpiAwareTextBlock}" />
-            <Slider x:Name="OpacitySlider" Minimum="20" Maximum="100" Value="100" StepFrequency="5" Style="{StaticResource DpiAwareSlider}" />
+            <TextBlock x:Name="OpacityLabel" Text="Opacity: 100%" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <Slider x:Name="OpacitySlider" Minimum="20" Maximum="100" Value="100" StepFrequency="5" Margin="0,0,0,16"/>
 
             <!-- Capsule Width -->
-            <TextBlock x:Name="WidthLabel" Text="Capsule Width: 64px" Style="{StaticResource DpiAwareTextBlock}" />
-            <Slider x:Name="WidthSlider" Minimum="48" Maximum="96" Value="64" StepFrequency="4" Style="{StaticResource DpiAwareSlider}" />
+            <TextBlock x:Name="WidthLabel" Text="Capsule Width: 64px" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <Slider x:Name="WidthSlider" Minimum="48" Maximum="96" Value="64" StepFrequency="4" Margin="0,0,0,16"/>
 
             <!-- Icon Size -->
-            <TextBlock x:Name="IconSizeLabel" Text="Icon Size: 32px" Style="{StaticResource DpiAwareTextBlock}" />
-            <Slider x:Name="IconSizeSlider" Minimum="24" Maximum="48" Value="32" StepFrequency="4" Style="{StaticResource DpiAwareSlider}" />
+            <TextBlock x:Name="IconSizeLabel" Text="Icon Size: 32px" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <Slider x:Name="IconSizeSlider" Minimum="24" Maximum="48" Value="32" StepFrequency="4" Margin="0,0,0,16"/>
 
             <!-- Widgets -->
-            <TextBlock Text="Widgets" Style="{StaticResource DpiAwareTextBlock}" />
-            <ToggleSwitch x:Name="HardwareWidgetToggle" Header="Hardware Monitor" Style="{StaticResource DpiAwareToggleSwitch}" />
-            <ToggleSwitch x:Name="DateTimeWidgetToggle" Header="Date &amp; Time" Style="{StaticResource DpiAwareToggleSwitch}" />
+            <TextBlock Text="Widgets" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <ToggleSwitch x:Name="HardwareWidgetToggle" Header="Hardware Monitor" Margin="0,0,0,8"/>
+            <ToggleSwitch x:Name="DateTimeWidgetToggle" Header="Date &amp; Time" Margin="0,0,0,16"/>
 
             <!-- System -->
-            <TextBlock Text="System" Style="{StaticResource DpiAwareTextBlock}" />
-            <ToggleSwitch x:Name="HideTaskbarToggle" Header="Hide Taskbar" Style="{StaticResource DpiAwareToggleSwitch}" />
-            <ToggleSwitch x:Name="StartupToggle" Header="Start with Windows" Style="{StaticResource DpiAwareToggleSwitch}" />
+            <TextBlock Text="System" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <ToggleSwitch x:Name="HideTaskbarToggle" Header="Hide Taskbar" Margin="0,0,0,8"/>
+            <ToggleSwitch x:Name="StartupToggle" Header="Start with Windows" Margin="0,0,0,16"/>
 
             <!-- Version -->
             <TextBlock Text="ScrollBar OS v1.0.0" FontSize="11" Opacity="0.5" Margin="0,16,0,0" />
